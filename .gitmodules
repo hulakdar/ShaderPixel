@@ -1,6 +1,6 @@
 [submodule "vendor/GLFW"]
 	path = vendor/GLFW
-	url = https://github.com/TheCherno/glfw
+	url = https://github.com/hulakdar/glfw
 [submodule "vendor/imgui"]
 	path = vendor/imgui
 	url = https://github.com/TheCherno/imgui

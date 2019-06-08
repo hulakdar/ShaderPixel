@@ -6,6 +6,7 @@ workspace "ShaderPixel"
 	configurations
 	{
 		"Debug",
+		"Development",
 		"Release"
 	}
 
@@ -23,12 +24,38 @@ group "Dependencies"
 	include "vendor/imgui"
 group ""
 
-project "ShaderSystem"
+project "ShaderPixel"
 	location "ShaderPixel"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
 	staticruntime "on"
+
+   
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+	files {
+		"{prj.name}/inc/**.h",
+		"{prj.name}/src/**.cpp"
+	}
+
+	includedirs
+	{
+		"%{prj.name}/src",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.glew}",
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.glm}"
+	}
+
+	links 
+	{ 
+		"GLFW",
+		"Glad",
+		"ImGui",
+		"opengl32.lib"
+	}
 
 	filter "system:windows"
 		systemversion "latest"
@@ -37,57 +64,11 @@ project "ShaderSystem"
 		defines { "DEBUG" }
 		symbols "On"
 
+	filter "configurations:Development"
+		defines { "DEVELOPMENT" }
+		symbols "On"
+		optimize "On"
+
 	filter "configurations:Release"
 		defines { "RELEASE" }
 		optimize "On"
-
-	links 
-	{ 
-		"Glad",
-		"opengl32.lib"
-    }
-
-project "ShaderPixel"
-   location "ShaderPixel"
-   kind "ConsoleApp"
-   language "C++"
-	cppdialect "C++17"
-   staticruntime "on"
-
-   
-   targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-   objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
-
-   files {
-       "{prj.name}/inc/**.h",
-       "{prj.name}/src/**.cpp"
-   }
-
-   includedirs
-	{
-		"%{prj.name}/src",
-		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.glew}",
-		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
-   }
-
-	links 
-	{ 
-		"ShaderSystem",
-		"GLFW",
-		"Glad",
-		"ImGui",
-		"opengl32.lib"
-   }
-
-	filter "system:windows"
-		systemversion "latest"
-
-   filter "configurations:Debug"
-      defines { "DEBUG" }
-      symbols "On"
-
-   filter "configurations:Release"
-      defines { "RELEASE" }
-      optimize "On"
