@@ -16,12 +16,16 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "vendor/GLFW/include"
 IncludeDir["Glad"] = "vendor/Glad/include"
 IncludeDir["ImGui"] = "vendor/imgui"
+IncludeDir["ImGuiImpl"] = "vendor/imgui_impl"
 IncludeDir["glm"] = "vendor/glm"
+IncludeDir["stb"] = "vendor/stb"
+IncludeDir["assimp"] = "vendor/assimp"
 
 group "Dependencies"
 	include "vendor/GLFW"
 	include "vendor/Glad"
 	include "vendor/imgui"
+	include "vendor/imgui_impl"
 group ""
 
 project "ShaderPixel"
@@ -36,16 +40,19 @@ project "ShaderPixel"
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
 	files {
-		"{prj.name}/inc/**.h",
-		"{prj.name}/src/**.cpp"
+		"%{prj.name}/include/**.h",
+		"%{prj.name}/src/**.cpp"
 	}
 
 	includedirs
 	{
-		"%{prj.name}/src",
+		"%{prj.name}/include",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.glew}",
+		"%{IncludeDir.assimp}",
+		"%{IncludeDir.stb}",
+		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.ImGuiImpl}",
 		"%{IncludeDir.glm}"
 	}
 
@@ -54,6 +61,7 @@ project "ShaderPixel"
 		"GLFW",
 		"Glad",
 		"ImGui",
+		"ImGuiImpl",
 		"opengl32.lib"
 	}
 
