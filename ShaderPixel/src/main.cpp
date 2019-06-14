@@ -75,18 +75,17 @@ int main(int argc, const char* argv[])
 
 	while (!App.shouldClose())
 	{
-		//ratio = width / (float)height;
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glUseProgram(program);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
 		App.update();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glUseProgram(program);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		ImGui::Button("KEK");
-		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+		ImGui::Text("This is some useful text.");
 
 		App.swapBuffers();
 	}
