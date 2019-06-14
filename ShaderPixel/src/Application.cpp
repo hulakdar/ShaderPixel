@@ -35,12 +35,15 @@ Application::Application()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, 1);
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_FLOATING, 1);
 
-	mWindow = glfwCreateWindow(1280, 720, "ShaderPixel", nullptr, nullptr);
+	mWindow = glfwCreateWindow(500, 500, "ShaderPixel", nullptr, nullptr);
 	glfwSetWindowUserPointer(mWindow, this);
+	glfwSetWindowOpacity(mWindow, 0.8f);
 
 	glfwGetFramebufferSize(mWindow, &mWidth, &mHeight);
 	glfwSetKeyCallback(mWindow, Callbacks::Keyboard);
@@ -61,7 +64,9 @@ void Application::updateWindowSize(int x, int y)
 {
 	mWidth = x;
 	mHeight = y;
-	glViewport(0, 0, mWidth, mHeight);
+	float xScale, yScale;
+	glfwGetWindowContentScale(mWindow, &xScale, &yScale);
+	glViewport(0, 0, mWidth / xScale, mHeight / yScale);
 }
 
 bool Application::shouldClose()
@@ -72,6 +77,7 @@ bool Application::shouldClose()
 void Application::update()
 {
 	glfwPollEvents();
+	mShaderManager.UpdatePrograms();
 }
 
 void Application::swapBuffers()

@@ -1,20 +1,21 @@
 #pragma once
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "ShaderManager.h"
 
 
 struct Application
 {
 	Application();
 	~Application();
-
 	static Application *FromWindow(GLFWwindow* window);
 
-	void updateWindowSize(int x, int y);
+	void update();
 	bool shouldClose();
 	void swapBuffers();
-	void update();
+	void updateWindowSize(int x, int y);
 private:
-	GLFWwindow	*mWindow;
-	int mWidth, mHeight;
+	ShaderManager	mShaderManager;
+	int				mWidth, mHeight;
+	GLFWwindow		*mWindow;
 };
