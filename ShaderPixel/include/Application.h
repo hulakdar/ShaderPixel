@@ -3,6 +3,10 @@
 #include <GLFW/glfw3.h>
 #include "ShaderManager.h"
 
+namespace Utils
+{
+	std::string StringFromFile(const std::string& filename);
+}
 
 struct Application
 {

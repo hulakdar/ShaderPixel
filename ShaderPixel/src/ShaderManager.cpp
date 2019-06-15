@@ -1,4 +1,13 @@
 #include "ShaderManager.h"
+#include "Application.h"
+
+#include <string>
+#include <fstream>
+#include <cstdio>
+#include <algorithm>
+#include <malloc.h>
+#include <assert.h>
+#include <imgui.h>
 
 #ifdef _WIN32
 #include <sys/stat.h>
@@ -7,14 +16,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
-
-#include <string>
-#include <fstream>
-#include <cstdio>
-#include <algorithm>
-#include <malloc.h>
-#include <assert.h>
-#include "imgui.h"
 
 static
 uint64_t GetFileTimestamp(const char* filename)
@@ -45,23 +46,6 @@ uint64_t GetFileTimestamp(const char* filename)
 
 	return timestamp;
 }
-
-static
-std::string ShaderStringFromFile(const std::string& filename)
-{
-	std::ifstream fs(filename);
-	if (fs.bad())
-	{
-		return "";
-	}
-
-	std::string s(
-		std::istreambuf_iterator<char>{fs},
-		std::istreambuf_iterator<char>{});
-
-	return s;
-}
-
 
 void ShaderManager::Timestamp::update(const std::string& vertexPath, const std::string fragmentPath)
 {
@@ -105,7 +89,6 @@ Shader ShaderManager::AddProgram(const std::string& vertexPath, const std::strin
 
 void ShaderManager::UpdatePrograms()
 {
-	// find all shaders with updated timestamps
 	for (auto& handle : sHandleMap)
 	{
 		const std::string &paths = handle.first;
@@ -129,7 +112,7 @@ void ShaderManager::UpdatePrograms()
 			auto compileSingleShader = [&](const std::string& filePath, GLenum type) -> GLuint
 			{
 				GLuint result = glCreateShader(type);
-				std::string text = mVersion + mPreamble + ShaderStringFromFile(filePath);
+				std::string text = mVersion + mPrefix + Utils::StringFromFile(filePath);
 
 				const char* data = text.data();
 				glShaderSource(result, 1, &data, NULL);
@@ -152,6 +135,7 @@ void ShaderManager::UpdatePrograms()
 			{   // link program
 				GLuint vertexShader = compileSingleShader(vertexPath, GL_VERTEX_SHADER);
 				GLuint fragmentShader = compileSingleShader(fragmentPath, GL_FRAGMENT_SHADER);
+				assert(vertexShader && fragmentShader);
 				glAttachShader(program, vertexShader);
 				glAttachShader(program, fragmentShader);
 				glLinkProgram(program);
@@ -195,16 +179,16 @@ void ShaderManager::UpdatePrograms()
 		std::string& errorMessage = sCompileErrors[handle.second];
 		if (errorMessage.size())
 		{
-			ImGui::Text("%s:", handle.first.data());
-			ImGui::Text("%s", errorMessage.data());
+			ImGui::TextWrapped("%s:\n", handle.first.data());
+			ImGui::TextWrapped("%s\n\n", errorMessage.data());
 		}
 	}
 	ImGui::End();
 }
 
-void ShaderManager::SetPreamble(const std::string& preambleFilename)
+void ShaderManager::setPrefix(const std::string& preambleFilename)
 {
-	mPreamble = ShaderStringFromFile(preambleFilename);
+	mPrefix = Utils::StringFromFile(preambleFilename);
 }
 
 std::map<std::string, Shader::Handle>	ShaderManager::sHandleMap;

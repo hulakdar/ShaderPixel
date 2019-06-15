@@ -34,7 +34,7 @@ private:
 	};
 	const GLuint GLOBAL_BLOCK_BINDING_LOCATION = 0;
 	std::string mVersion = "#version 410 core\n";
-	std::string mPreamble;
+	std::string mPrefix;
 	static std::map<std::string, Shader::Handle> sHandleMap;
 	static std::vector<GLuint>			sShaders;
 	static std::vector<Timestamp>		sTimestamps;
@@ -44,7 +44,7 @@ public:
 	ShaderManager() = default;
 	~ShaderManager();
 
-	void SetPreamble(const std::string& preambleFilename);
+	void setPrefix(const std::string& preambleFilename);
 	static Shader AddProgram(const std::string& vertexPath, const std::string& fragmentPath);
 	void UpdatePrograms();
 };
