@@ -123,6 +123,7 @@ void ShaderManager::UpdatePrograms()
 		Timestamp &timestamp = sTimestamps[index];
 		if (timestamp != currentTimestamp)
 		{
+			timestamp = currentTimestamp;
 			std::string& compileError = sCompileErrors[index];
 			compileError.clear();
 			auto compileSingleShader = [&](const std::string& filePath, GLenum type) -> GLuint
@@ -180,8 +181,10 @@ void ShaderManager::UpdatePrograms()
 			GLuint blockIndex = glGetUniformBlockIndex(program, "global");
 			if (blockIndex != GL_INVALID_INDEX)
 				glUniformBlockBinding(program, blockIndex, GLOBAL_BLOCK_BINDING_LOCATION);
-			sShaders[index] = program;
-			timestamp = currentTimestamp;
+			GLuint& oldProgram = sShaders[index];
+			if (oldProgram)
+				glDeleteProgram(oldProgram);
+			oldProgram = program;
 			break;
 		}
 	}

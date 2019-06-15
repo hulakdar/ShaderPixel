@@ -43,7 +43,7 @@ Application::Application()
 
 	mWindow = glfwCreateWindow(500, 500, "ShaderPixel", nullptr, nullptr);
 	glfwSetWindowUserPointer(mWindow, this);
-	glfwSetWindowOpacity(mWindow, 0.8f);
+	//glfwSetWindowOpacity(mWindow, 0.8f);
 
 	glfwGetFramebufferSize(mWindow, &mWidth, &mHeight);
 	glfwSetKeyCallback(mWindow, Callbacks::Keyboard);
@@ -64,9 +64,9 @@ void Application::updateWindowSize(int x, int y)
 {
 	mWidth = x;
 	mHeight = y;
-	float xScale, yScale;
-	glfwGetWindowContentScale(mWindow, &xScale, &yScale);
-	glViewport(0, 0, mWidth / xScale, mHeight / yScale);
+	//float xScale, yScale;
+	//glfwGetWindowContentScale(mWindow, &xScale, &yScale);
+	glViewport(0, 0, mWidth, mHeight);
 }
 
 bool Application::shouldClose()

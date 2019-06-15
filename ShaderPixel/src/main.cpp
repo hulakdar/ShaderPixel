@@ -24,7 +24,9 @@ int main(int argc, const char* argv[])
 
 	GLuint vertex_buffer, vertex_array;
 
-	Shader defaultShader = ShaderManager::AddProgram("content/shaders/vertDefault.shader", "content/shaders/fragDefault.shader");
+	Shader defaultShader = ShaderManager::AddProgram(
+				"content/shaders/vertDefault.shader",
+				"content/shaders/fragDefault.shader");
 
 	glGenVertexArrays(1, &vertex_array);
 	glBindVertexArray(vertex_array);

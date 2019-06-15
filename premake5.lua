@@ -80,3 +80,4 @@ project "ShaderPixel"
 	filter "configurations:Release"
 		defines { "RELEASE" }
 		optimize "On"
+		symbols "On"
