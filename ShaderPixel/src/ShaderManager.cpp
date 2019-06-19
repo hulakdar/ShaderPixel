@@ -1,5 +1,5 @@
 #include "ShaderManager.h"
-#include "Application.h"
+#include "Host.h"
 
 #include <string>
 #include <fstream>
@@ -17,7 +17,23 @@
 #include <sys/types.h>
 #endif
 
-static
+namespace Utils {
+
+	std::string StringFromFile(const std::string& filename)
+	{
+		std::ifstream fs(filename);
+		if (fs.bad())
+		{
+			return "";
+		}
+
+		std::string s(
+			std::istreambuf_iterator<char>{fs},
+			std::istreambuf_iterator<char>{});
+
+		return s;
+	}
+
 uint64_t GetFileTimestamp(const char* filename)
 {
 	uint64_t timestamp = 0;
@@ -46,18 +62,19 @@ uint64_t GetFileTimestamp(const char* filename)
 
 	return timestamp;
 }
-
-void ShaderManager::Timestamp::update(const std::string& vertexPath, const std::string fragmentPath)
-{
-	vertex = GetFileTimestamp(vertexPath.c_str());
-	fragment = GetFileTimestamp(fragmentPath.c_str());
 }
 
-bool ShaderManager::Timestamp::operator==(const Timestamp& Other)
+void Shader::Timestamp::update(const std::string& vertexPath, const std::string fragmentPath)
+{
+	vertex = Utils::GetFileTimestamp(vertexPath.c_str());
+	fragment = Utils::GetFileTimestamp(fragmentPath.c_str());
+}
+
+bool Shader::Timestamp::operator==(const Timestamp& Other)
 {
 	return vertex == Other.vertex && fragment == Other.fragment;
 }
-bool ShaderManager::Timestamp::operator!=(const Timestamp& Other)
+bool Shader::Timestamp::operator!=(const Timestamp& Other)
 {
 	return !(*this == Other);
 }
@@ -70,7 +87,7 @@ ShaderManager::~ShaderManager()
 	}
 }
 
-Shader ShaderManager::AddProgram(const std::string& vertexPath, const std::string& fragmentPath)
+Shader ShaderManager::GetShader(const std::string& vertexPath, const std::string& fragmentPath)
 {
 	const std::string key = vertexPath + ":" + fragmentPath;
 
@@ -98,12 +115,12 @@ void ShaderManager::UpdatePrograms()
 
 		std::string vertexPath = paths.substr(0, colon);
 		std::string fragmentPath = paths.substr(colon+1, std::string::npos);
-		Timestamp currentTimestamp;
+		Shader::Timestamp currentTimestamp;
 		currentTimestamp.update(vertexPath, fragmentPath);
 
 		uint32_t index = handle.second;
 
-		Timestamp &timestamp = sTimestamps[index];
+		auto &timestamp = sTimestamps[index];
 		if (timestamp != currentTimestamp)
 		{
 			timestamp = currentTimestamp;
@@ -186,13 +203,13 @@ void ShaderManager::UpdatePrograms()
 	ImGui::End();
 }
 
-void ShaderManager::setPrefix(const std::string& preambleFilename)
+void ShaderManager::setPrefix(const std::string& prefixFilename)
 {
-	mPrefix = Utils::StringFromFile(preambleFilename);
+	mPrefix = Utils::StringFromFile(prefixFilename);
 }
 
 std::map<std::string, Shader::Handle>	ShaderManager::sHandleMap;
-std::vector<ShaderManager::Timestamp>	ShaderManager::sTimestamps;
+std::vector<Shader::Timestamp>			ShaderManager::sTimestamps;
 std::vector<std::string>				ShaderManager::sCompileErrors;
 std::vector<GLuint>						ShaderManager::sShaders;
 
