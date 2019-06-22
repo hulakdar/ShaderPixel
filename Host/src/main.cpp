@@ -22,6 +22,7 @@ int main(int argc, const char* argv[])
 
 	while (!app.shouldClose())
 	{
+		app.preframe();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 		glfwPollEvents();

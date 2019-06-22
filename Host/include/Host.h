@@ -15,6 +15,8 @@ struct Host
 	~Host();
 	static Host *FromWindow(GLFWwindow* window);
 
+		
+	void	preframe();
 	void	update();
 	bool	shouldClose();
 	void	swapBuffers();

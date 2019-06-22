@@ -1,9 +1,12 @@
+#include <glad/glad.h>
 #include "Host.h"
 #include "UserInterface.h"
 #include "Application.h"
 #include <iostream>
 #include <fstream>
 #include <imgui_impl_glfw.h>
+#include <windows.h>
+#include <assert.h>
 
 namespace {
 namespace Callbacks {
@@ -30,6 +33,11 @@ Host* Host::FromWindow(GLFWwindow* window)
 	return (Host*)glfwGetWindowUserPointer(window);
 }
 
+void Host::preframe()
+{
+	mApplication->preframe(this);
+}
+
 Host::Host()
 {
 	glfwSetErrorCallback(Callbacks::Error);
@@ -43,7 +51,7 @@ Host::Host()
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_FLOATING, 1);
+	//glfwWindowHint(GLFW_FLOATING, 1);
 
 	mWindow = glfwCreateWindow(500, 500, "ShaderPixel", nullptr, nullptr);
 	glfwSetWindowUserPointer(mWindow, this);
@@ -58,9 +66,17 @@ Host::Host()
 
 
 	glfwGetWindowContentScale(mWindow, &mScale, &mScale);
-	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
 
-	mApplication->init(this);
+	HMODULE lib = LoadLibraryA("ShaderPixel.dll");
+	assert(lib);
+
+	ApplicationGetter *app = (ApplicationGetter *)GetProcAddress(lib, "getApplicationPtr");
+
+	mApplication = app();
+
+	mApplication->init(this, (GLADloadproc)&glfwGetProcAddress);
+
+	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
 }
 
 void Host::updateWindowSize(int x, int y)

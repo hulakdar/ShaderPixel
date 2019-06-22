@@ -25,7 +25,6 @@ IncludeDir["assimp"] = "vendor/assimp"
 group "Dependencies"
 	include "vendor/GLFW"
 	include "vendor/Glad"
-	include "vendor/imgui"
 	include "vendor/"
 group ""
 
@@ -40,6 +39,8 @@ project "ShaderPixel"
    
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+	defines "IMGUI_API=__declspec(dllimport)"
 
 	files {
 		"%{prj.name}/include/**.h",
@@ -92,8 +93,8 @@ project "Host"
 	language "C++"
 	cppdialect "C++17"
    
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+	targetdir ("bin/" .. outputdir .. "/ShaderPixel")
+	objdir ("bin-int/" .. outputdir .. "/ShaderPixel")
 
 	files {
 		"%{prj.name}/include/**.h",
@@ -104,6 +105,7 @@ project "Host"
 	{
 		"%{prj.name}/include",
 		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.ImGuiImpl}"
 	}
@@ -112,7 +114,8 @@ project "Host"
 	{ 
 		"GLFW",
 		"ImGui",
-		"ImGuiImplGLFW"
+		"ImGuiImplGLFW",
+		"ImGuiImplGL"
 	}
 
 	filter "system:windows"

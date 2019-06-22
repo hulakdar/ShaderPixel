@@ -1,11 +1,6 @@
 #pragma once
 
-
-#pragma once
-
-// Replace with your own GL header include
 #include <glad/glad.h>
-
 #include <vector>
 #include <utility>
 #include <map>
@@ -39,7 +34,7 @@ private:
 	static std::map<std::string, Shader::Handle> sHandleMap;
 	static std::vector<Shader::Timestamp>		sTimestamps;
 	static std::vector<GLuint>					sShaders;
-	static std::vector<std::string>				sCompileErrors;
+	static std::vector<std::string>			sCompileErrors;
 
 public:
 	ShaderManager() = default;

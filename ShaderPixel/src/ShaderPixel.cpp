@@ -7,6 +7,13 @@
 #include <imgui_impl_opengl3.h>
 #include <tiny_obj_loader.h>
 
+extern "C"
+__declspec(dllexport)
+Application* getApplicationPtr()
+{
+	return new ShaderPixel();
+}
+
 static void func1(Host*)
 {
 	std::cout << "I'm func1\n";
@@ -33,9 +40,9 @@ std::vector<Callback> ShaderPixel::getCallbacks()
 	return callbacks;
 }
 
-void ShaderPixel::init(Host *host)
+void ShaderPixel::init(Host *host, GLADloadproc getProc)
 {
-	gladLoadGL();
+	gladLoadGLLoader(getProc);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -86,7 +93,7 @@ void ShaderPixel::init(Host *host)
 	tinyobj::ObjReader objReader;
 
 	//objReader.ParseFromFile("content/sponza/sponza.obj");
-	assert(objReader.Valid());
+	//assert(objReader.Valid());
 
 	auto& shapes = objReader.GetShapes();
 	auto& attributes = objReader.GetAttrib();
@@ -122,5 +129,10 @@ void ShaderPixel::renderUI(Host*)
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	ImGui::UpdatePlatformWindows();
 	ImGui::RenderPlatformWindowsDefault();
+}
+
+void ShaderPixel::preframe(Host*)
+{
+	ImGui_ImplOpenGL3_NewFrame();
 }
 
