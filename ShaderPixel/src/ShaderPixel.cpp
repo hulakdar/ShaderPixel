@@ -14,30 +14,17 @@ Application* getApplicationPtr()
 	return new ShaderPixel();
 }
 
-static void func1(Host*)
-{
-	std::cout << "I'm func1\n";
-}
-
-static void func2(Host*)
-{
-	std::cout << "I'm func2\n";
-}
-
 void ShaderPixel::update(Host*)
 {
-	ImGui_ImplOpenGL3_NewFrame();
+	glClearColor(1, 0, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-}
+	Shader defaultShader = mShaderManager.GetShader(
+				"content/shaders/vertDefault.shader",
+				"content/shaders/fragDefault.shader");
+	defaultShader.Bind();
 
-std::vector<Callback> ShaderPixel::getCallbacks()
-{
-	static std::vector<Callback> callbacks{
-		{"func1", &func1},
-		{"func2", &func2}
-	};
-	return callbacks;
+	ImGui::Text("Test");
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void ShaderPixel::init(Host *host, GLADloadproc getProc)

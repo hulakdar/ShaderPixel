@@ -21,6 +21,8 @@ project "ImGuiImplGLFW"
         cppdialect "C++17"
         staticruntime "On"
         
+        --[[
+
 project "ImGuiImplGL"
     kind "SharedLib"
     language "C++"
@@ -54,6 +56,8 @@ project "ImGuiImplGL"
         systemversion "latest"
         cppdialect "C++17"
         staticruntime "On"
+
+]]
 
 project "TinyObjLoader"
     kind "StaticLib"

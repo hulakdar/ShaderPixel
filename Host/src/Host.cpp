@@ -41,7 +41,7 @@ void Host::preframe()
 Host::Host()
 {
 	glfwSetErrorCallback(Callbacks::Error);
-	// TODO: glfwInitHint(); 
+	// TODO: ??? glfwInitHint(); 
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -51,11 +51,11 @@ Host::Host()
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	//glfwWindowHint(GLFW_FLOATING, 1);
+	//glfwWindowHint(GLFW_FLOATING, 1); // window always on top
 
 	mWindow = glfwCreateWindow(500, 500, "ShaderPixel", nullptr, nullptr);
 	glfwSetWindowUserPointer(mWindow, this);
-	//glfwSetWindowOpacity(mWindow, 0.8f);
+	//glfwSetWindowOpacity(mWindow, 0.8f); // transparent window
 
 	glfwGetFramebufferSize(mWindow, &mWidth, &mHeight);
 	glfwSetKeyCallback(mWindow, Callbacks::Keyboard);
@@ -98,9 +98,9 @@ void Host::update()
 
 void Host::swapBuffers()
 {
-	GLFWwindow* backup_current_context = glfwGetCurrentContext();
+	//GLFWwindow* backup_current_context = glfwGetCurrentContext();
 	mApplication->renderUI(this);
-	glfwMakeContextCurrent(backup_current_context);
+	//glfwMakeContextCurrent(backup_current_context);
 	glfwSwapBuffers(mWindow);
 }
 

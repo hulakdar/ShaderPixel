@@ -40,9 +40,15 @@ project "ShaderPixel"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-	defines "IMGUI_API=__declspec(dllimport)"
+	defines {
+		"IMGUI_API=__declspec(dllimport)", 
+		"IMGUI_IMPL_API=", 
+		"IMGUI_IMPL_OPENGL_LOADER_GLAD"
+	} 
 
 	files {
+        "vendor/imgui/examples/imgui_impl_opengl3.h",
+        "vendor/imgui/examples/imgui_impl_opengl3.cpp",
 		"%{prj.name}/include/**.h",
 		"%{prj.name}/src/**.cpp"
 	}
@@ -65,7 +71,7 @@ project "ShaderPixel"
 	{ 
 		"Glad",
 		"ImGui",
-		"ImGuiImplGL",
+		--"ImGuiImplGL",
 		"TinyObjLoader",
 		"opengl32.lib"
 	}
@@ -114,8 +120,8 @@ project "Host"
 	{ 
 		"GLFW",
 		"ImGui",
-		"ImGuiImplGLFW",
-		"ImGuiImplGL"
+		"ImGuiImplGLFW"
+		--, "ImGuiImplGL"
 	}
 
 	filter "system:windows"
