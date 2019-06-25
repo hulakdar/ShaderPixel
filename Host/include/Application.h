@@ -4,23 +4,19 @@
 #include <glad/glad.h>
 
 struct Host;
-
-struct Callback
-{
-	std::string name;
-	std::function<void(Host*)> callback;
-};
+Host& getHost();
 
 class Application
 {
 public:
-	virtual void preframe(Host*) = 0;
-	virtual void update(Host*) = 0;
-	virtual void updateWindowSize(int x, int y) = 0;
 	virtual void init(Host*, GLADloadproc) = 0;
-	virtual void deinit(Host*) = 0;
-	virtual void renderUI(Host*) = 0;
-	virtual std::vector<Callback> getCallbacks() = 0;
+	virtual void deinit() = 0;
+
+	virtual void preframe() = 0;
+	virtual void update() = 0;
+	virtual void onKey(int key, int scancode, int action, int mods) = 0;
+	virtual void updateWindowSize(int x, int y) = 0;
+	virtual void renderUI() = 0;
 };
 
 typedef Application *ApplicationGetter();

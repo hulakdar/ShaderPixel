@@ -103,6 +103,8 @@ project "Host"
 	objdir ("bin-int/" .. outputdir .. "/ShaderPixel")
 
 	files {
+        "vendor/imgui/examples/imgui_impl_glfw.h",
+        "vendor/imgui/examples/imgui_impl_glfw.cpp",
 		"%{prj.name}/include/**.h",
 		"%{prj.name}/src/**.cpp"
 	}
@@ -119,9 +121,8 @@ project "Host"
 	links 
 	{ 
 		"GLFW",
-		"ImGui",
-		"ImGuiImplGLFW"
-		--, "ImGuiImplGL"
+        "ImGui"
+        --, "ImGuiImplGL"
 	}
 
 	filter "system:windows"

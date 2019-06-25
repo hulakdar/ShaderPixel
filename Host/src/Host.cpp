@@ -1,12 +1,12 @@
 #include <glad/glad.h>
 #include "Host.h"
 #include "UserInterface.h"
-#include "Application.h"
 #include <iostream>
 #include <fstream>
 #include <imgui_impl_glfw.h>
 #include <windows.h>
 #include <assert.h>
+#include "Application.h"
 
 namespace {
 namespace Callbacks {
@@ -16,14 +16,15 @@ namespace Callbacks {
 	}
 	void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
-		Host* AppState = Host::FromWindow(window);
+		Host* host = Host::FromWindow(window);
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, GLFW_TRUE);
+		host->onKey(key, scancode, action, mods);
 	}
 	void FramebufferSize(GLFWwindow* window, int width, int height)
 	{
-		Host* AppState = Host::FromWindow(window);
-		AppState->updateWindowSize(width, height);
+		Host* host = Host::FromWindow(window);
+		host->updateWindowSize(width, height);
 	}
 }
 }
@@ -33,13 +34,26 @@ Host* Host::FromWindow(GLFWwindow* window)
 	return (Host*)glfwGetWindowUserPointer(window);
 }
 
-void Host::preframe()
+void Host::onKey(int key, int scancode, int action, int mods)
 {
-	mApplication->preframe(this);
+	if (mApplication)
+		mApplication->onKey(key, scancode, action, mods);
 }
 
-Host::Host()
+void Host::preframe()
 {
+	updateDLL();
+	mApplication->preframe();
+}
+
+Host::Host(const std::string &dllPath)
+	: mLib(NULL)
+	, mDllPath(dllPath)
+	, mApplication(nullptr)
+	, allocate(&malloc)
+	, deallocate(&free)
+{
+
 	glfwSetErrorCallback(Callbacks::Error);
 	// TODO: ??? glfwInitHint(); 
 	glfwInit();
@@ -64,17 +78,9 @@ Host::Host()
 	glfwMakeContextCurrent(mWindow);
 	glfwSwapInterval(1);
 
-
 	glfwGetWindowContentScale(mWindow, &mScale, &mScale);
 
-	HMODULE lib = LoadLibraryA("ShaderPixel.dll");
-	assert(lib);
-
-	ApplicationGetter *app = (ApplicationGetter *)GetProcAddress(lib, "getApplicationPtr");
-
-	mApplication = app();
-
-	mApplication->init(this, (GLADloadproc)&glfwGetProcAddress);
+	updateDLL();
 
 	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
 }
@@ -86,6 +92,30 @@ void Host::updateWindowSize(int x, int y)
 	mApplication->updateWindowSize(x, y);
 }
 
+void Host::updateDLL()
+{
+	Timestamp currentDllTimestamp;
+	currentDllTimestamp.update(mDllPath);
+	if (mDllTimestamp == currentDllTimestamp)
+		return;
+
+	if (mApplication)
+		mApplication->deinit();
+	std::string dllName = mDllPath.substr(mDllPath.rfind('\\') + 1, std::string::npos);
+	std::string tmpDLL = mDllPath;
+	tmpDLL.insert(tmpDLL.find(dllName), "tmp");
+	CopyFileA(mDllPath.c_str(), tmpDLL.c_str(), false);
+	if (mLib)
+		FreeLibrary((HMODULE)mLib);
+
+	mLib = LoadLibraryA(tmpDLL.c_str() + tmpDLL.find("tmp"));
+
+	ApplicationGetter *app = (ApplicationGetter *)GetProcAddress((HMODULE)mLib, "getApplicationPtr");
+
+	mApplication = app();
+	mApplication->init(this, (GLADloadproc)&glfwGetProcAddress);
+}
+
 bool Host::shouldClose()
 {
 	return glfwWindowShouldClose(mWindow);
@@ -93,13 +123,13 @@ bool Host::shouldClose()
 
 void Host::update()
 {
-	mApplication->update(this);
+	mApplication->update();
 }
 
 void Host::swapBuffers()
 {
 	//GLFWwindow* backup_current_context = glfwGetCurrentContext();
-	mApplication->renderUI(this);
+	mApplication->renderUI();
 	//glfwMakeContextCurrent(backup_current_context);
 	glfwSwapBuffers(mWindow);
 }

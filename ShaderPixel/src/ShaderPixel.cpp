@@ -7,29 +7,65 @@
 #include <imgui_impl_opengl3.h>
 #include <tiny_obj_loader.h>
 
+
 extern "C"
 __declspec(dllexport)
 Application* getApplicationPtr()
 {
-	return new ShaderPixel();
+	static ShaderPixel sShaderPixel;
+	return &sShaderPixel;
 }
 
-void ShaderPixel::update(Host*)
+Host*& staticHost()
 {
+	static Host *sHost;
+	return sHost;
+}
+
+Host& getHost()
+{
+	return *staticHost();
+}
+
+void *operator new(size_t size)
+{
+	void * p = getHost().allocate(size);
+	return p;
+}
+
+void operator delete(void * p)
+{
+	getHost().deallocate(p);
+}
+
+void ShaderPixel::update()
+{
+	AppMemory *mem = getHost().mMemory;
 	glClearColor(1, 0, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	Shader defaultShader = mShaderManager.GetShader(
+
+	Shader defaultShader = mem->shaderManager.getShader(
 				"content/shaders/vertDefault.shader",
 				"content/shaders/fragDefault.shader");
+	mem->shaderManager.updatePrograms();
 	defaultShader.Bind();
 
 	ImGui::Text("Test");
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+}
+
+
+void ShaderPixel::onKey(int key, int scancode, int action, int mods)
+{
+	ImGui::TextColored(ImVec4(1, 0.5, 1, 1), "%d %d %d %d", key, scancode, action, mods);
 }
 
 void ShaderPixel::init(Host *host, GLADloadproc getProc)
 {
-	gladLoadGLLoader(getProc);
+	staticHost() = host;
+	gladLoadGL(); //gladLoadGLLoader(getProc); 
+
+	host->mMemory = new AppMemory();
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -71,20 +107,23 @@ void ShaderPixel::init(Host *host, GLADloadproc getProc)
 
 
 	//main
-	mShaderManager.GetShader("kek", "lol");
+	//mShaderManager.GetShader("kek", "lol");
 
-	Shader defaultShader = mShaderManager.GetShader(
-				"content/shaders/vertDefault.shader",
-				"content/shaders/fragDefault.shader");
-
+	/*
 	tinyobj::ObjReader objReader;
-
-	//objReader.ParseFromFile("content/sponza/sponza.obj");
-	//assert(objReader.Valid());
+	objReader.ParseFromFile("content/sponza/sponza.obj");
+	assert(objReader.Valid());
 
 	auto& shapes = objReader.GetShapes();
 	auto& attributes = objReader.GetAttrib();
 	auto& vertices = attributes.GetVertices();
+	*/
+
+	float vertices[] = {
+	   -0.6f, -0.4f, 0.f,
+		0.6f, -0.4f, 0.f,
+		0.f,   0.6f, 0.f
+	};
 
 	GLuint vertex_buffer, vertex_array;
 
@@ -93,13 +132,13 @@ void ShaderPixel::init(Host *host, GLADloadproc getProc)
 
 	glGenBuffers(1, &vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(tinyobj::real_t), vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-		sizeof(tinyobj::real_t), (void*)0);
+		sizeof(float) * 3, (void*)0);
 }
 
-void ShaderPixel::deinit(Host*)
+void ShaderPixel::deinit()
 {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui::DestroyContext();
@@ -110,15 +149,12 @@ void ShaderPixel::updateWindowSize(int x, int y)
 	glViewport(0, 0, x, y);
 }
 
-void ShaderPixel::renderUI(Host*)
+void ShaderPixel::renderUI()
 {
-	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	ImGui::UpdatePlatformWindows();
-	ImGui::RenderPlatformWindowsDefault();
 }
 
-void ShaderPixel::preframe(Host*)
+void ShaderPixel::preframe()
 {
 	ImGui_ImplOpenGL3_NewFrame();
 }

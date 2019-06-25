@@ -18,7 +18,9 @@ static const struct
 
 int main(int argc, const char* argv[])
 {
-	Host app;
+	std::string exePath = argv[0];
+	exePath.resize(exePath.rfind('\\') + 1);
+	Host app(exePath + "ShaderPixel.dll");
 
 	while (!app.shouldClose())
 	{
@@ -27,6 +29,10 @@ int main(int argc, const char* argv[])
         ImGui::NewFrame();
 		glfwPollEvents();
 		app.update();
+		ImGui::Render();
+		ImGui::EndFrame();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
 		app.swapBuffers();
 	}
 }
