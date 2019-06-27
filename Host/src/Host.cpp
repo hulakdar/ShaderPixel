@@ -114,6 +114,7 @@ void Host::updateDLL()
 
 	mApplication = app();
 	mApplication->init(this, (GLADloadproc)&glfwGetProcAddress);
+	mDllTimestamp = currentDllTimestamp;
 }
 
 bool Host::shouldClose()
@@ -123,6 +124,7 @@ bool Host::shouldClose()
 
 void Host::update()
 {
+	updateDLL();
 	mApplication->update();
 }
 

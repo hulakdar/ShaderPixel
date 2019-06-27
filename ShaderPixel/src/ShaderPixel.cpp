@@ -47,10 +47,12 @@ void ShaderPixel::update()
 	Shader defaultShader = mem->shaderManager.getShader(
 				"content/shaders/vertDefault.shader",
 				"content/shaders/fragDefault.shader");
+
 	mem->shaderManager.updatePrograms();
 	defaultShader.Bind();
 
 	ImGui::Text("Test");
+	glBindVertexArray(vertex_array);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
@@ -124,8 +126,6 @@ void ShaderPixel::init(Host *host, GLADloadproc getProc)
 		0.6f, -0.4f, 0.f,
 		0.f,   0.6f, 0.f
 	};
-
-	GLuint vertex_buffer, vertex_array;
 
 	glGenVertexArrays(1, &vertex_array);
 	glBindVertexArray(vertex_array);

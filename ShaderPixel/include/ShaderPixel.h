@@ -19,6 +19,7 @@ struct AppMemory
 
 class ShaderPixel : public Application
 {
+	GLuint vertex_buffer, vertex_array;
 public:
 	virtual void init(Host*, GLADloadproc) override;
 	virtual void deinit() override;
