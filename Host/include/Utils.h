@@ -9,6 +9,7 @@
 #endif
 #include <string>
 #include <fstream>
+#include <glm/glm.hpp>
 
 namespace Utils
 {
@@ -70,3 +71,10 @@ struct Timestamp
 	inline bool operator != (const Timestamp& Other) { return !(*this == Other); }
 };
 
+
+inline std::ostream&
+operator << (std::ostream& o, glm::vec3 vec)
+{
+	o << vec.x<< " " << vec.y<< " " << vec.z;
+	return o;
+}

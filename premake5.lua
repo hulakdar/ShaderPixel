@@ -35,9 +35,8 @@ project "ShaderPixel"
 	language "C++"
 	cppdialect "C++17"
 	staticruntime "on"
-
    
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	targetdir ("bin/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
 	defines {
@@ -99,12 +98,12 @@ project "Host"
 	language "C++"
 	cppdialect "C++17"
    
-	targetdir ("bin/" .. outputdir .. "/ShaderPixel")
+	targetdir ("bin/ShaderPixel")
 	objdir ("bin-int/" .. outputdir .. "/ShaderPixel")
 
 	files {
-        "vendor/imgui/examples/imgui_impl_glfw.h",
-        "vendor/imgui/examples/imgui_impl_glfw.cpp",
+		"vendor/imgui/examples/imgui_impl_glfw.h",
+		"vendor/imgui/examples/imgui_impl_glfw.cpp",
 		"%{prj.name}/include/**.h",
 		"%{prj.name}/src/**.cpp"
 	}
@@ -112,6 +111,7 @@ project "Host"
 	includedirs
 	{
 		"%{prj.name}/include",
+		"%{IncludeDir.glm}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
