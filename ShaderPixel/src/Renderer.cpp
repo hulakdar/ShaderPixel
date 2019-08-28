@@ -5,6 +5,8 @@
 #include <iostream>
 #include "Wrapper.h"
 
+#include <glad/glad.h>
+
 namespace Renderer
 {
 	void Init()
@@ -33,6 +35,23 @@ namespace Renderer
 		Program.Bind();
 		Va.Bind();
 		GLCall(glDrawArrays(GL_TRIANGLES, 0, Count));
+	}
+
+	void DrawInstanced(const VertexArray& Va, const Shader& Program, const IndexBuffer& Ib)
+	{
+		Program.Bind();
+		Va.Bind();
+		Ib.Bind();
+		std::cerr << "Instanced is not implemented yet \n";
+		//GLCall(glDrawElementsInstanced(GL_TRIANGLES, Ib.GetCount(), GL_UNSIGNED_INT, 0));
+	}
+
+	void DrawInstanced(const VertexArray& Va, const Shader& Program, unsigned int Count)
+	{
+		Program.Bind();
+		Va.Bind();
+		std::cerr << "Instanced is not implemented yet \n";
+		//GLCall(glDrawArraysInstanced(GL_TRIANGLES, 0, Count));
 	}
 
 }

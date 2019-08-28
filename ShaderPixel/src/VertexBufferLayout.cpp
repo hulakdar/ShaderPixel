@@ -1,5 +1,6 @@
 #include "VertexBufferLayout.h"
 #include "Renderer.h"
+#include <glad/glad.h>
 
 unsigned int GetSizeOfType(unsigned int Type)
 {

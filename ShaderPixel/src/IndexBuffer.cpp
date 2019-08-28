@@ -1,6 +1,7 @@
 #include "IndexBuffer.h"
 #include "Renderer.h"
 #include "Wrapper.h"
+#include <glad/glad.h>
 
 unsigned int IndexBuffer::s_CurrentlyBound = 0;
 

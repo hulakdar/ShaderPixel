@@ -1,7 +1,8 @@
 #include "Texture.h"
 #include "Renderer.h"
-#include <iostream>
 #include "stb_image.h"
+#include <iostream>
+#include <glad/glad.h>
 
 std::unordered_map<std::string, Texture> Texture::s_TextureCache;
 unsigned int Texture::s_CurrentlyBound = 0;

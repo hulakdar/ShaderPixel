@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include "Wrapper.h"
+#include <glad/glad.h>
 
 std::unordered_map<std::string, int> Shader::s_ShaderCache;
 unsigned int Shader::s_CurrentlyBound = 0;

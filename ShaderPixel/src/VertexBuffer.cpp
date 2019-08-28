@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
-#include "Renderer.h"
 #include "Wrapper.h"
+#include <glad/glad.h>
 
 unsigned int VertexBuffer::s_CurrentlyBound = 0;
 

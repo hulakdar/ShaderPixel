@@ -1,9 +1,5 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "Entity.h"
 
 /* Forward declarations */
@@ -17,5 +13,7 @@ namespace Renderer
 	void Clear();
 	void Draw(const VertexArray& Va, const Shader& Program, const IndexBuffer& Ib);
 	void Draw(const VertexArray& Va, const Shader& Program, unsigned int Count);
+	void DrawInstanced(const VertexArray& Va, const Shader& Program, const IndexBuffer& Ib);
+	void DrawInstanced(const VertexArray& Va, const Shader& Program, unsigned int Count);
 };
 
