@@ -9,8 +9,7 @@
 //#include "Application.h"
 #include "ShaderPixel.h"
 
-namespace {
-namespace Callbacks {
+namespace { namespace Callbacks {
 	void Error(int error, const char* description)
 	{
 		std::cerr << "GLFW Sent error " << error << ": " << description << "\n";
@@ -27,8 +26,7 @@ namespace Callbacks {
 		Host* host = Host::FromWindow(window);
 		host->updateWindowSize(width, height);
 	}
-}
-}
+} }
 
 Host* Host::FromWindow(GLFWwindow* window)
 {
@@ -135,8 +133,7 @@ void Host::updateDLL()
 
 	gladLoadGL();
 
-	static ShaderPixel app;
-	mApplication = (Application *)&app;
+	mApplication = new ShaderPixel();
 	mApplication->init(this);
 #endif
 }
@@ -167,5 +164,6 @@ Host::~Host()
     ImGui_ImplGlfw_Shutdown();
 	glfwDestroyWindow(mWindow);
 	glfwTerminate();
+	delete mApplication;
 }
 

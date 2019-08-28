@@ -7,7 +7,7 @@ unsigned int VertexBuffer::s_CurrentlyBound = 0;
 VertexBuffer::VertexBuffer(const void *Data, size_t Size)
 {
 	// generating the vertex buffer
-	GLCall(glGenBuffers(1, &m_RendererID));
+	GLCall(glGenBuffers(1, &mRendererID));
 	// binding the buffer
 	Bind();
 	// transferring the buffer to GPU
@@ -17,15 +17,15 @@ VertexBuffer::VertexBuffer(const void *Data, size_t Size)
 
 VertexBuffer::~VertexBuffer()
 {
-	GLCall(glDeleteBuffers(1, &m_RendererID));
+	GLCall(glDeleteBuffers(1, &mRendererID));
 }
 
 void VertexBuffer::Bind(void) const
 {
-	//if (m_RendererID == s_CurrentlyBound)
+	//if (mRendererID == s_CurrentlyBound)
 	//	return;
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_RendererID));
-	s_CurrentlyBound = m_RendererID;
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, mRendererID));
+	s_CurrentlyBound = mRendererID;
 }
 
 void VertexBuffer::Unbind(void) const

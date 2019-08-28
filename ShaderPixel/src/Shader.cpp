@@ -6,8 +6,8 @@
 #include "Wrapper.h"
 #include <glad/glad.h>
 
-std::unordered_map<std::string, int> Shader::s_ShaderCache;
-unsigned int Shader::s_CurrentlyBound = 0;
+static std::map<std::string, int> sShaderCache;
+static unsigned int sCurrentlyBound = 0;
 
 inline static std::string GetShaderSource(const std::string& Filepath)
 {
@@ -74,27 +74,32 @@ Shader::Shader(const std::string & VertexPath, const std::string & FragmentPath)
 	unsigned int VertexShader = GetShaderLocation(GL_VERTEX_SHADER, VertexPath);
 	unsigned int FragmentShader = GetShaderLocation(GL_FRAGMENT_SHADER, FragmentPath);
 
-	m_RendererID = CreateShader(VertexShader, FragmentShader);
+	mRendererID = CreateShader(VertexShader, FragmentShader);
 	Bind();
+}
+
+Shader::Shader(const std::string& VertexPath /*= "../content/shaders/vertDefault.shader"*/, const std::string& FragmentPath /*= "../content/shaders/fragDefault.shader"*/)
+{
+
 }
 
 Shader::~Shader()
 {
-	GLCall(glDeleteProgram(m_RendererID));
+	GLCall(glDeleteProgram(mRendererID));
 }
 
 void Shader::Bind() const
 {
-	//if (m_RendererID == s_CurrentlyBound)
+	//if (mRendererID == s_CurrentlyBound)
 	//	return;
-	GLCall(glUseProgram(m_RendererID));
-	s_CurrentlyBound = m_RendererID;
+	GLCall(glUseProgram(mRendererID));
+	//sCurrentlyBound = mRendererID;
 }
 
 void Shader::Unbind() const
 {
 	GLCall(glUseProgram(0));
-	s_CurrentlyBound = 0;
+	//sCurrentlyBound = 0;
 }
 
 void Shader::SetUniform(const std::string & Name, int value)
@@ -103,10 +108,28 @@ void Shader::SetUniform(const std::string & Name, int value)
 	GLCall(glUniform1i(GetUniformLocation(Name), value));
 }
 
+void Shader::SetUniform(const std::string & Name, unsigned int value)
+{
+	Bind();
+	GLCall(glUniform1ui(GetUniformLocation(Name), value));
+}
+
 void Shader::SetUniform(const std::string & Name, float value)
 {
 	Bind();
 	GLCall(glUniform1f(GetUniformLocation(Name), value));
+}
+
+void Shader::SetUniform(const std::string & Name, float v0, float v1)
+{
+	Bind();
+	GLCall(glUniform2f(GetUniformLocation(Name), v0, v1));
+}
+
+void Shader::SetUniform(const std::string & Name, const glm::vec2& value)
+{
+	Bind();
+	GLCall(glUniform2fv(GetUniformLocation(Name), 1, &value[0]));
 }
 
 void Shader::SetUniform(const std::string & Name, float v0, float v1, float v2)
@@ -120,6 +143,7 @@ void Shader::SetUniform(const std::string & Name, const glm::vec3& value)
 	Bind();
 	GLCall(glUniform3fv(GetUniformLocation(Name), 1, &value[0]));
 }
+
 
 void Shader::SetUniform(const std::string & Name, const glm::vec4& value)
 {
@@ -145,12 +169,63 @@ void Shader::SetUniform(const std::string & Name, const glm::mat4& Value)
 	GLCall(glUniformMatrix4fv(GetUniformLocation(Name), 1, GL_FALSE, &Value[0][0]));
 }
 
+void Shader::SetUniform(const Uniform& Uniform)
+{
+	switch (Uniform.Type)
+	{
+	case Uniform::FLOAT: {
+		SetUniform(Uniform.Name, Uniform.scalar);
+	}
+	case Uniform::VEC2: {
+		SetUniform(Uniform.Name, Uniform.v2);
+	}
+	case Uniform::VEC3: {
+		SetUniform(Uniform.Name, Uniform.v3);
+	}
+	case Uniform::VEC4: {
+		SetUniform(Uniform.Name, Uniform.v4);
+	}
+	case Uniform::IVEC2: {
+		SetUniform(Uniform.Name, Uniform.iv2);
+	}
+	case Uniform::IVEC3: {
+		SetUniform(Uniform.Name, Uniform.iv3);
+	}
+	case Uniform::IVEC4: {
+		SetUniform(Uniform.Name, Uniform.iv4);
+	}
+	case Uniform::TEX: {
+		SetUniform(Uniform.Name, Uniform.tex);
+	}
+	default:
+		break;
+	}
+}
+
+void Shader::SetUniform(const std::string& Name, const glm::ivec2& value)
+{
+	Bind();
+	GLCall(glUniform2iv(GetUniformLocation(Name), 1, &value[0]));
+}
+
+void Shader::SetUniform(const std::string& Name, const glm::ivec3& value)
+{
+	Bind();
+	GLCall(glUniform3iv(GetUniformLocation(Name), 1, &value[0]));
+}
+
+void Shader::SetUniform(const std::string& Name, const glm::ivec4& value)
+{
+	Bind();
+	GLCall(glUniform4iv(GetUniformLocation(Name), 1, &value[0]));
+}
+
 int Shader::GetUniformLocation(const std::string & Name)
 {
 	auto FindIterator = LocationCache.find(Name);
 	if (FindIterator != LocationCache.end())
 		return FindIterator->second;
-	GLCall(int Location = glGetUniformLocation(m_RendererID, Name.c_str()));
+	GLCall(int Location = glGetUniformLocation(mRendererID, Name.c_str()));
 	LocationCache[Name] = Location;
 	if (Location == -1)
 		std::cerr << Name << " wasn't found as a uniform\n";
@@ -159,10 +234,10 @@ int Shader::GetUniformLocation(const std::string & Name)
 
 int Shader::GetShaderLocation(unsigned int Type, const std::string & Name)
 {
-	auto FindIterator = s_ShaderCache.find(Name);
-	if (FindIterator != s_ShaderCache.end())
+	auto FindIterator = sShaderCache.find(Name);
+	if (FindIterator != sShaderCache.end())
 		return FindIterator->second;
 	unsigned int Location = CompileShader(Type, Name);
-	s_ShaderCache[Name] = Location;
+	sShaderCache[Name] = Location;
 	return Location;
 }

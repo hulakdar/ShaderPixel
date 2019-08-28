@@ -9,7 +9,7 @@ unsigned int VertexArray::s_CurrentlyBound = 0;
 VertexArray::VertexArray()
 {
 	// generating the vertex buffer
-	GLCall(glGenVertexArrays(1, &m_RendererID));
+	GLCall(glGenVertexArrays(1, &mRendererID));
 	//Bind();
 }
 
@@ -21,7 +21,7 @@ VertexArray::VertexArray(const VertexBuffer & Vb, const VertexBufferLayout & Vbl
 
 VertexArray::~VertexArray()
 {
-	GLCall(glDeleteVertexArrays(1, &m_RendererID));
+	GLCall(glDeleteVertexArrays(1, &mRendererID));
 }
 
 void VertexArray::AddBuffer(const VertexBuffer& Vb, const VertexBufferLayout& Layout)
@@ -45,10 +45,10 @@ void VertexArray::AddBuffer(const VertexBuffer& Vb, const VertexBufferLayout& La
 
 void VertexArray::Bind() const
 {
-	//if (m_RendererID == s_CurrentlyBound)
+	//if (mRendererID == s_CurrentlyBound)
 	//	return;
-	GLCall(glBindVertexArray(m_RendererID));
-	s_CurrentlyBound = m_RendererID;
+	GLCall(glBindVertexArray(mRendererID));
+	s_CurrentlyBound = mRendererID;
 }
 
 void VertexArray::Unbind() const

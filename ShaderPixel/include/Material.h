@@ -1,13 +1,17 @@
+#pragma  once
+
 #include "Texture.h"
 #include "Shader.h"
 #include <memory>
+#include <vector>
 
 class Material
 {
 private:
-    Shader                  m_Shader;
-    std::vector<std::shared_ptr<Texture>> m_Textures;
-    //std::vector<Uniform>    m_Uniforms;
+    Shader                  mShader;
+    //std::vector<std::shared_ptr<Texture>> mTextures;
+    std::vector<Uniform>    mUniforms;
 public:
 	Material();
+	void Apply();
 };

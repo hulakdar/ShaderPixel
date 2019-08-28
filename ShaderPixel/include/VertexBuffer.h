@@ -52,7 +52,7 @@ class VertexBuffer
 private:
 	static unsigned int s_CurrentlyBound;
 
-	unsigned int m_RendererID;
+	unsigned int mRendererID;
 public:
 	VertexBuffer(const void *Data = cubeVertexBufferData, size_t Size = sizeof(cubeVertexBufferData));
 

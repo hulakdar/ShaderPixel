@@ -14,8 +14,8 @@ struct VertexBufferElement
 class VertexBufferLayout
 {
 private:
-	std::vector<VertexBufferElement> m_Elements;
-	unsigned int m_Stride;
+	std::vector<VertexBufferElement> mElements;
+	unsigned int mStride;
 public:
 	VertexBufferLayout();
 	~VertexBufferLayout();

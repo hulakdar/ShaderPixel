@@ -75,7 +75,9 @@ void ShaderPixel::update()
 	const glm::vec3 LightPosition(0.f, 0.f, -10.f);
 
 	mProgram.SetUniform("uViewProjection", mViewProjectionMatrix);
-	mProgram.SetUniform("time", (float)glfwGetTime());
+	mProgram.SetUniform("uTime", (float)glfwGetTime());
+	mProgram.SetUniform("uTex", 0);
+	mTexture.Bind();
 	float angle = mRotationAngle;
 	for (auto& Position : CubePositions)
 	{
@@ -140,8 +142,8 @@ void ShaderPixel::init(Host* host)
 //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 //IM_ASSERT(font != NULL);
 
-	{
-
+{
+	Renderer::Init();
 	tinyobj::ObjReader objReader;
 	objReader.ParseFromFile("../content/sibenik/sibenik.obj");
 	assert(objReader.Valid());
@@ -167,8 +169,8 @@ void ShaderPixel::init(Host* host)
 
 void ShaderPixel::deinit()
 {
-    //ImGui_ImplOpenGL3_Shutdown();
-    //ImGui::DestroyContext();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void ShaderPixel::updateWindowSize(int x, int y)

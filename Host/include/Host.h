@@ -33,8 +33,8 @@ struct Host
 private:
 	void			*mLib;
 	std::string		mDllPath;
-	Application		*mApplication;
 	Timestamp		mDllTimestamp;
+	Application		*mApplication;
 	int				mWidth, mHeight;
 	GLFWwindow		*mWindow;
 

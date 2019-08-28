@@ -6,10 +6,10 @@
 unsigned int IndexBuffer::s_CurrentlyBound = 0;
 
 IndexBuffer::IndexBuffer(const unsigned int *Data, unsigned int Count) :
-	m_Count(Count)
+	mCount(Count)
 {
 	// generationg the vertex buffer
-	GLCall(glGenBuffers(1, &m_RendererID));
+	GLCall(glGenBuffers(1, &mRendererID));
 	// binding the buffer
 	Bind();
 	// transfering the buffer to gpu
@@ -20,15 +20,15 @@ IndexBuffer::IndexBuffer(const std::vector<unsigned int>& Data) : IndexBuffer(Da
 
 IndexBuffer::~IndexBuffer()
 {
-	GLCall(glDeleteBuffers(1, &m_RendererID));
+	GLCall(glDeleteBuffers(1, &mRendererID));
 }
 
 void IndexBuffer::Bind(void) const
 {
-	//if (m_RendererID == s_CurrentlyBound)
+	//if (mRendererID == s_CurrentlyBound)
 	//	return;
-	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID));
-	s_CurrentlyBound = m_RendererID;
+	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mRendererID));
+	s_CurrentlyBound = mRendererID;
 }
 
 void IndexBuffer::Unbind(void) const
@@ -39,5 +39,5 @@ void IndexBuffer::Unbind(void) const
 
 unsigned int IndexBuffer::GetCount(void) const
 {
-	return m_Count;
+	return mCount;
 }

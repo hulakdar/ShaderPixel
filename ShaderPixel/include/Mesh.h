@@ -1,3 +1,5 @@
+#pragma  once
+
 #include "VertexBuffer.h"
 #include "VertexArray.h"
 #include "VertexBufferLayout.h"
@@ -7,10 +9,10 @@
 class Mesh
 {
 private:
-    VertexBuffer		m_VertexBuffer;
-    VertexBufferLayout	m_VertexBufferLayout;
-    VertexArray			m_VertexArray;
-    Material            m_Material;
+    VertexBuffer		mVertexBuffer;
+    VertexBufferLayout	mVertexBufferLayout;
+    VertexArray			mVertexArray;
+    Material            mMaterial;
 public:
 	Mesh(const std::vector<float>& Verteces, const Material& Material);
 	Mesh(const std::vector<float>& Verteces, const Shader& Shader);

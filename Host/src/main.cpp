@@ -50,8 +50,8 @@ int main(int argc, const char* argv[])
 		app.update();
 		ImGui::Render();
 		ImGui::EndFrame();
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
+		//ImGui::UpdatePlatformWindows();
+		//ImGui::RenderPlatformWindowsDefault();
 		app.swapBuffers();
 	}
 }

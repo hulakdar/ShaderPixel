@@ -5,5 +5,5 @@
 
 class Model
 {
-	std::vector<Mesh> m_Meshes;
+	std::vector<Mesh> mMeshes;
 };

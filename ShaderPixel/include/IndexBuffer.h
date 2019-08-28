@@ -6,8 +6,8 @@ class IndexBuffer
 private:
 	static unsigned int s_CurrentlyBound;
 
-	unsigned int m_RendererID;
-	unsigned int m_Count;
+	unsigned int mRendererID;
+	unsigned int mCount;
 public:
 	IndexBuffer(const unsigned int *Data, unsigned int Count);
 	IndexBuffer(const std::vector<unsigned int>& Data);

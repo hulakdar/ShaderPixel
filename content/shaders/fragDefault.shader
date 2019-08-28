@@ -1,11 +1,13 @@
 #version 410
 
-in vec3 color;
+in vec2 UV;
 out vec4 fragColor;
 
-uniform float time;
+uniform float uTime;
+uniform sampler2D uTex;
 
 void main()
 {
-	fragColor = vec4(vec3(fract(time)), 1);
+	vec3 color = texture(uTex, UV).xyz;
+	fragColor = vec4(color, 1);
 }

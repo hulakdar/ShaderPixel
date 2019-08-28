@@ -4,10 +4,11 @@
 #include "VertexArray.h"
 #include "VertexBuffer.h"
 #include "glm/glm.hpp"
+#include "Mesh.h"
 
 struct Scene
 {
-	std::vector<int> meshes;
+	std::vector<Mesh> meshes;
 };
 
 struct Environment
@@ -34,6 +35,7 @@ public:
 	virtual void onKey(int key, int scancode, int action, int mods) override;
 private:
 	Shader mProgram;
+	Texture mTexture;
 	VertexBuffer		mVBO;
 	VertexArray			mVAO;
 	glm::mat4 mViewProjectionMatrix;
