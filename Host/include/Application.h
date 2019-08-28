@@ -9,7 +9,7 @@ Host& getHost();
 class Application
 {
 public:
-	virtual void init(Host*, GLADloadproc) = 0;
+	virtual void init(Host*) = 0;
 	virtual void deinit() = 0;
 
 	virtual void preframe() = 0;

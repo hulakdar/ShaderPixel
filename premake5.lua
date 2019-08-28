@@ -31,10 +31,10 @@ group ""
 
 project "ShaderPixel"
 	location "ShaderPixel"
-	kind "SharedLib"
+	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "on"
+	--- staticruntime "on"
 
    
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -112,7 +112,9 @@ project "Host"
 	includedirs
 	{
 		"%{prj.name}/include",
+		"ShaderPixel/include",
 		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.glm}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.ImGuiImpl}"
@@ -121,6 +123,7 @@ project "Host"
 	links 
 	{ 
 		"GLFW",
+		"ShaderPixel",
         "ImGui"
         --, "ImGuiImplGL"
 	}

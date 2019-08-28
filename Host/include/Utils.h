@@ -68,5 +68,6 @@ struct Timestamp
 
 	inline bool operator == (const Timestamp& Other) { return stamp == Other.stamp; }
 	inline bool operator != (const Timestamp& Other) { return !(*this == Other); }
+	inline operator bool () { return stamp; }
 };
 

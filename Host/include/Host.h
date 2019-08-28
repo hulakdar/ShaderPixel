@@ -39,4 +39,5 @@ private:
 	GLFWwindow		*mWindow;
 
 	void			updateDLL();
+	bool mForceReload;
 };

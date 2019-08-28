@@ -6,5 +6,5 @@ out vec3 color;
 void main()
 {
 	gl_Position = vec4(vPos, 1.0);
-	color = vCol;
+	color = vec3(gl_VertexID / 3);
 }

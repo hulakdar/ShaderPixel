@@ -1,3 +1,4 @@
+/*
 #include "ShaderPixel.h"
 #include "Host.h"
 
@@ -53,8 +54,10 @@ void ShaderManager::updatePrograms()
 		if (timestamp != currentTimestamp)
 		{
 			timestamp = currentTimestamp;
+
 			std::string& compileError = mCompileErrors[index];
 			compileError.clear();
+
 			auto compileSingleShader = [&](const std::string& filePath, GLenum type) -> GLuint
 			{
 				GLuint result = glCreateShader(type);
@@ -63,6 +66,7 @@ void ShaderManager::updatePrograms()
 				const char* data = text.data();
 				glShaderSource(result, 1, &data, NULL);
 				glCompileShader(result);
+
 
 				GLint status;
 				glGetShaderiv(result, GL_COMPILE_STATUS, &status);
@@ -143,6 +147,15 @@ void Shader::Bind()
 	glUseProgram(host.mMemory->shaderManager.mShaders[mHandle]);
 }
 
+void Shader::Uniform(const std::string& name, float scalar)
+{
+	auto &host = getHost();
+	glUseProgram(host.mMemory->shaderManager.mShaders[mHandle]);
+	GLint location = glGetUniformLocation(host.mMemory->shaderManager.mShaders[mHandle], name.c_str());
+	if (location >= 0)
+		glUniform1f(location, scalar);
+}
+
 bool Shader::Timestamp::operator!=(const Timestamp& Other)
 {
 	return !(*this == Other);
@@ -153,8 +166,14 @@ bool Shader::Timestamp::operator==(const Timestamp& Other)
 	return vert == Other.vert && frag == Other.frag;
 }
 
+Shader::Timestamp::operator bool ()
+{
+	return (frag && vert);
+}
+
 void Shader::Timestamp::update(const std::string& vertPath, const std::string& fragPath)
 {
 	vert.update(vertPath);
 	frag.update(fragPath);
 }
+*/

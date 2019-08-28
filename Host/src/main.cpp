@@ -15,7 +15,6 @@ static const struct
 	{ 1.f, 1.f, 1.f, 1.f, 1.f }
 };
 
-
 int main(int argc, const char* argv[])
 {
 	std::string exePath = argv[0];

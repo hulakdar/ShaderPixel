@@ -6,7 +6,8 @@
 #include <imgui_impl_glfw.h>
 #include <windows.h>
 #include <assert.h>
-#include "Application.h"
+//#include "Application.h"
+#include "ShaderPixel.h"
 
 namespace {
 namespace Callbacks {
@@ -37,7 +38,7 @@ Host* Host::FromWindow(GLFWwindow* window)
 void Host::onKey(int key, int scancode, int action, int mods)
 {
 	if (mApplication)
-		mApplication->onKey(key, scancode, action, mods);
+		;//mApplication->onKey(key, scancode, action, mods);
 }
 
 void Host::preframe()
@@ -47,7 +48,8 @@ void Host::preframe()
 }
 
 Host::Host(const std::string &dllPath)
-	: mLib(NULL)
+	: mMemory(nullptr)
+	, mLib(NULL)
 	, mDllPath(dllPath)
 	, mApplication(nullptr)
 	, allocate(&malloc)
@@ -81,8 +83,8 @@ Host::Host(const std::string &dllPath)
 	glfwGetWindowContentScale(mWindow, &mScale, &mScale);
 
 	updateDLL();
-
 	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
+
 }
 
 void Host::updateWindowSize(int x, int y)
@@ -94,10 +96,13 @@ void Host::updateWindowSize(int x, int y)
 
 void Host::updateDLL()
 {
+#if HOTLOAD
 	Timestamp currentDllTimestamp;
 	currentDllTimestamp.update(mDllPath);
-	if (mDllTimestamp == currentDllTimestamp)
+
+	if (mDllTimestamp == currentDllTimestamp && !mForceReload)
 		return;
+	mForceReload = false;
 
 	if (mApplication)
 		mApplication->deinit();
@@ -105,16 +110,33 @@ void Host::updateDLL()
 	std::string tmpDLL = mDllPath;
 	tmpDLL.insert(tmpDLL.find(dllName), "tmp");
 	CopyFileA(mDllPath.c_str(), tmpDLL.c_str(), false);
+
+	HMODULE tmpModule = LoadLibraryA(tmpDLL.c_str() + tmpDLL.find("tmp"));
+
+	if (!tmpModule)
+		return;
 	if (mLib)
 		FreeLibrary((HMODULE)mLib);
 
-	mLib = LoadLibraryA(tmpDLL.c_str() + tmpDLL.find("tmp"));
+	ApplicationGetter *app = (ApplicationGetter *)GetProcAddress((HMODULE)tmpModule, "getApplicationPtr");
 
-	ApplicationGetter *app = (ApplicationGetter *)GetProcAddress((HMODULE)mLib, "getApplicationPtr");
+	if (!app)
+	{
+		FreeLibrary((HMODULE)tmpModule);
+		return;
+	}
 
 	mApplication = app();
-	mApplication->init(this, (GLADloadproc)&glfwGetProcAddress);
+	mApplication->init(this);
 	mDllTimestamp = currentDllTimestamp;
+#else
+	if (mApplication)
+		return;
+
+	static ShaderPixel app;
+	mApplication = (Application *)&app;
+	mApplication->init(this);
+#endif
 }
 
 bool Host::shouldClose()
@@ -124,15 +146,17 @@ bool Host::shouldClose()
 
 void Host::update()
 {
-	updateDLL();
 	mApplication->update();
+#if HOTLOAD
+	mForceReload = ImGui::Button("ForceReloadDLL");
+#endif
 }
 
 void Host::swapBuffers()
 {
-	//GLFWwindow* backup_current_context = glfwGetCurrentContext();
+	GLFWwindow* backup_current_context = glfwGetCurrentContext();
 	mApplication->renderUI();
-	//glfwMakeContextCurrent(backup_current_context);
+	glfwMakeContextCurrent(backup_current_context);
 	glfwSwapBuffers(mWindow);
 }
 

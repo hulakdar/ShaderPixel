@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include <glad/glad.h>
 #include <vector>
 #include <utility>
@@ -16,11 +17,13 @@ struct Shader
 		void update(const std::string&, const std::string&);
 		bool operator == (const Timestamp& Other);
 		bool operator != (const Timestamp& Other);
+		operator bool ();
 	};
-	typedef uint32_t Handle; //index into mHandles;
+	typedef uint32_t Handle; //index into mShaders
 	Handle mHandle;
 
 	void Bind();
+	void Uniform(const std::string& name, float scalar);
 };
 
 class ShaderManager
@@ -43,3 +46,4 @@ public:
 	Shader	getShader(const std::string& vertexPath, const std::string& fragmentPath);
 	void	updatePrograms();
 };
+*/
