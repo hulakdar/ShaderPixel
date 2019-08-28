@@ -35,7 +35,6 @@ public:
 private:
 	Shader mProgram;
 	VertexBuffer		mVBO;
-	VertexBufferLayout	mVBL;
 	VertexArray			mVAO;
 	glm::mat4 mViewProjectionMatrix;
 	float mRotationAngle;

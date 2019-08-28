@@ -50,9 +50,21 @@ inline static unsigned int CreateShader(unsigned int Vs, unsigned int Fs)
 	GLCall(unsigned int Program = glCreateProgram());
 	GLCall(glAttachShader(Program, Vs));
 	GLCall(glAttachShader(Program, Fs));
-	GLCall(glLinkProgram(Program));
-	GLCall(glValidateProgram(Program));
 
+	{
+		char errText[512];
+		GLCall(glLinkProgram(Program));
+		int success;
+		glGetProgramiv(Program, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			glGetProgramInfoLog(Program, 512, nullptr, errText);
+			std::cout << errText << '\n';
+			__debugbreak();
+		}
+	}
+
+	GLCall(glValidateProgram(Program));
 	return Program;
 }
 

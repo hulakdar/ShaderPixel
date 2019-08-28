@@ -13,8 +13,8 @@ private:
 	unsigned int m_RendererID;
 	std::unordered_map<std::string, int> LocationCache;
 public:
-	Shader(const std::string& VertexPath = "../content/shaders/vertDefault.shaders",
-		const std::string& FragmentPath = "../content/shaders/fragDefault.shaders");
+	Shader(const std::string& VertexPath = "../content/shaders/vertDefault.shader",
+		const std::string& FragmentPath = "../content/shaders/fragDefault.shader");
 	~Shader();
 
 	void Bind() const ;

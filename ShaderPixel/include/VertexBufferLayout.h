@@ -20,17 +20,13 @@ public:
 	VertexBufferLayout();
 	~VertexBufferLayout();
 
-	//template<typename T>
-	//void Push(unsigned int Count)
-	//{
-	//	(void)Count;
-	//	//SDL_assert(false);
-	//	std::cerr << "Trying to push invalid type to VertexBufferLayout\n";
-	//	exit(1);
-	//}
-
 	template<typename T>
 	void Push(unsigned int Count);
+	//{
+	//	(void)Count;
+	//	std::cerr << "Trying to push invalid type to VertexBufferLayout\n";
+	//	__debugbreak();
+	//}
 
 	const std::vector<VertexBufferElement>& GetElements() const ;
 	unsigned int GetStride() const ;

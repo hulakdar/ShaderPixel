@@ -1,10 +1,13 @@
+#version 410
 
-layout (location = 0) in vec3 vPos;
+layout (location = 0) in vec4 vPos;
 
-out vec3 color;
+//out vec3 color;
+uniform mat4 uViewProjection;
+uniform mat4 uModel;
 
 void main()
 {
-	gl_Position = vec4(vPos, 1.0);
-	color = vec3(gl_VertexID / 3);
+	gl_Position = uViewProjection * uModel * vPos;
+	//color = vec3(gl_VertexID / 3);
 }

@@ -133,6 +133,8 @@ void Host::updateDLL()
 	if (mApplication)
 		return;
 
+	gladLoadGL();
+
 	static ShaderPixel app;
 	mApplication = (Application *)&app;
 	mApplication->init(this);

@@ -46,6 +46,7 @@ void VertexBufferLayout::Push<unsigned char>(unsigned int Count)
 }
 
 VertexBufferLayout::VertexBufferLayout()
+	: m_Stride(0)
 {
 }
 

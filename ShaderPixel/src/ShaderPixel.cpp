@@ -66,22 +66,24 @@ void ShaderPixel::update()
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	mViewProjectionMatrix = glm::perspective(glm::radians(65.0f), 1.f, 0.1f, 100.0f) * glm::translate(glm::mat4(1), glm::vec3(0.0f, 5 * sin(mRotationAngle), -3.0f));
 
 	const glm::vec3 LightPosition(0.f, 0.f, -10.f);
 
-	mProgram.SetUniform("u_LightPosition", LightPosition);
-	mProgram.SetUniform("u_ViewProjection", mViewProjectionMatrix);
+	mProgram.SetUniform("uViewProjection", mViewProjectionMatrix);
+	mProgram.SetUniform("time", (float)glfwGetTime());
 	float angle = mRotationAngle;
 	for (auto& Position : CubePositions)
 	{
 		const glm::mat4 Model = glm::rotate(glm::translate(glm::mat4(1.f), Position), mRotationAngle, glm::vec3(0.f, 1.f, 0.f));
-		angle += 15.f;
 
-		mProgram.SetUniform("u_NormalRot", glm::mat3(glm::transpose(glm::inverse(Model))));
-		mProgram.SetUniform("u_Model", Model);
+		mProgram.SetUniform("uModel", Model);
 		Renderer::Draw(mVAO, mProgram, 36);
 	}
+
+	mRotationAngle += 0.001f;
 }
 
 
@@ -97,7 +99,6 @@ void ShaderPixel::init(Host* host)
 	if (!host->mMemory)
 	{
 		host->mMemory = new AppMemory();
-		gladLoadGL();
 	}
 
 	ImGui::CreateContext();
@@ -155,6 +156,7 @@ void ShaderPixel::init(Host* host)
 		0.f,   0.6f, 1.f
 	};
 
+	VertexBufferLayout	mVBL;
 	mVBL.Push<float>(3);
 	mVBL.Push<float>(2);
 	mVBL.Push<float>(3);
