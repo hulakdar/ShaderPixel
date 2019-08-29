@@ -69,18 +69,13 @@ inline static unsigned int CreateShader(unsigned int Vs, unsigned int Fs)
 	return Program;
 }
 
-Shader::Shader(const std::string & VertexPath, const std::string & FragmentPath)
+Shader::Shader(const std::string& VertexPath /*= "../content/shaders/vertDefault.shader"*/, const std::string& FragmentPath /*= "../content/shaders/fragDefault.shader"*/)
 {
 	unsigned int VertexShader = GetShaderLocation(GL_VERTEX_SHADER, VertexPath);
 	unsigned int FragmentShader = GetShaderLocation(GL_FRAGMENT_SHADER, FragmentPath);
 
 	mRendererID = CreateShader(VertexShader, FragmentShader);
 	Bind();
-}
-
-Shader::Shader(const std::string& VertexPath /*= "../content/shaders/vertDefault.shader"*/, const std::string& FragmentPath /*= "../content/shaders/fragDefault.shader"*/)
-{
-
 }
 
 Shader::~Shader()
