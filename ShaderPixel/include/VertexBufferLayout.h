@@ -18,7 +18,6 @@ private:
 	unsigned int mStride;
 public:
 	VertexBufferLayout();
-	~VertexBufferLayout();
 
 	template<typename T>
 	void Push(unsigned int Count);

@@ -18,7 +18,9 @@ Texture::Texture(const std::string& Filepath) :
 //		return;
 //	}
 
+	uint8_t			*mLocalBuffer;
 	mLocalBuffer = stbi_load(Filepath.c_str(), &mSize.x, &mSize.y, &mComponentCount, 4);
+	
 	if (!mLocalBuffer)
 	{
 		__debugbreak();
@@ -34,12 +36,11 @@ Texture::Texture(const std::string& Filepath) :
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mSize.x, mSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, mLocalBuffer);
 	Unbind();
 	//s_TextureCache.emplace(Filepath, *this);
+	free(mLocalBuffer);
 	std::cerr << "A new texture loaded: " << Filepath << "\n";
 }
 
-Texture::Texture(const Texture & Other) :
-	mRendererID(0),
-	mLocalBuffer(nullptr)
+Texture::Texture(const Texture & Other)
 {
 	*this = Other;
 }

@@ -4,11 +4,8 @@
 
 class Texture
 {
-private:
-
-	unsigned int	mRendererID;
-	uint8_t			*mLocalBuffer;
 public:
+	unsigned int	mRendererID;
 	Texture(const std::string& Filepath = "../content/face.png");
 	Texture(const Texture& Other);
 	Texture& operator=(const Texture& Other);
@@ -17,8 +14,8 @@ public:
 	void Bind(unsigned int Slot = 0) const;
 	void Unbind() const;
 
-	glm::ivec2		mSize;
-	int				mComponentCount;
+	glm::ivec2		mSize{0,0};
+	int				mComponentCount = 0;
 	std::string		mFilepath;
 };
 

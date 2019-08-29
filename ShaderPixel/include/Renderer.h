@@ -32,7 +32,7 @@ namespace Renderer
 {
 	void Init();
 	void Clear();
-	void Draw(Scene& scene, Shader shader, glm::mat4 viewProjection);
+	void Draw(Scene& scene, Shader& shader, glm::mat4 viewProjection);
 	void Draw(Mesh& Mesh);
 	void Draw(const VertexArray& Va, const IndexBuffer& Ib);
 	void Draw(const VertexArray& Va, unsigned int Count);

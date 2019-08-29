@@ -46,9 +46,6 @@ void ShaderPixel::update()
 //	if (auto kek = glGetError())
 //		std::cout << kek;
 //
-//	Shader defaultShader = mem->shaderManager.getShader(
-//		"../content/shaders/vertDefault.shader",
-//		"../content/shaders/fragDefault.shader");
 //
 //	mem->shaderManager.updatePrograms();
 //	defaultShader.Bind();
@@ -69,27 +66,20 @@ void ShaderPixel::update()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	static float mRotationAngle;
+	static float RunningOffset;
 	glm::mat4 mViewProjectionMatrix =
 		glm::perspective(
 			glm::radians(65.0f), 1.f, 0.1f, 100.0f) *
 			glm::translate(glm::mat4(1),
-		glm::vec3(0.0f, 5 * sin(mRotationAngle), -3.0f));
+		glm::vec3(0.0f, 5 * sin(RunningOffset), -3.0f));
 
 	AppMemory* mem = getHost().mMemory;
 	const glm::vec3 LightPosition(0.f, 0.f, -10.f);
 
-	Shader debugShader;
-
-	float angle = mRotationAngle;
-	//for (auto& Position : CubePositions)
-	//{
-	//	const glm::mat4 Model = glm::rotate(glm::translate(glm::mat4(1.f), Position), mRotationAngle, glm::vec3(0.f, 1.f, 0.f));
-
-	//}
+	float angle = RunningOffset;
 	Renderer::Draw(mem->scene, debugShader, mViewProjectionMatrix);
 
-	mRotationAngle += 0.001f;
+	RunningOffset += 0.001f;
 }
 
 
@@ -158,18 +148,20 @@ void ShaderPixel::init(Host* host)
 	Renderer::Init();
 
     VertexBufferLayout	vbl;
-	Mesh mesh;
 	vbl.Push<float>(3);
 	vbl.Push<float>(2);
 	vbl.Push<float>(3);
-	mesh.mVertexArray.AddBuffer(mesh.mVertexBuffer, vbl);
-	mesh.mCount = 36;
 
-	Model model;
-	model.mMeshes.push_back(mesh);
-	model.mModelSpace = glm::translate(glm::mat4(1), glm::vec3(0, 1, -10));
-
-	host->mMemory->scene.mModels.push_back(model);
+	auto modelSpace = glm::translate(glm::mat4(1), glm::vec3(0, 1, -10));
+	host->mMemory->scene.mModels.emplace_back(Model{ modelSpace, {Mesh{} } });
+	auto& model = host->mMemory->scene.mModels.back();
+	model.mMeshes[0].mCount = 36;
+	Uniform tex;
+	tex.Type = Uniform::TEX;
+	tex.tex = debugTexture.mRendererID;
+	tex.Name = "uTex";
+	model.mMeshes[0].mMaterial.mUniforms.push_back(tex);
+	FinalizeMesh(model.mMeshes[0], vbl);
 }
 
 void ShaderPixel::deinit()

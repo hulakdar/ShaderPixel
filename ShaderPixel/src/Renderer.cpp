@@ -7,6 +7,7 @@
 #include "Wrapper.h"
 
 #include <glad/glad.h>
+#include "GLFW/glfw3.h"
 
 namespace Renderer
 {
@@ -18,7 +19,7 @@ namespace Renderer
 		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 	}
 
-	void ApplyMaterial(Material& material, Shader shader)
+	void ApplyMaterial(Material& material, Shader& shader)
 	{
 		for (auto& It : material.mUniforms)
 		{
@@ -31,7 +32,7 @@ namespace Renderer
 		GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	}
 
-	void Draw(Scene& scene, Shader shader, glm::mat4 viewProjection)
+	void Draw(Scene& scene, Shader& shader, glm::mat4 viewProjection)
 	{
 		for (auto& model : scene.mModels)
 		{
@@ -40,6 +41,7 @@ namespace Renderer
 			{
 				ApplyMaterial(mesh.mMaterial, shader);
 				shader.SetUniform("uMVP", MVP);
+				shader.SetUniform("uTime", (float)glfwGetTime());
 				Draw(mesh);
 			}
 		}

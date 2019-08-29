@@ -51,11 +51,6 @@ VertexBufferLayout::VertexBufferLayout()
 {
 }
 
-
-VertexBufferLayout::~VertexBufferLayout()
-{
-}
-
 const std::vector<VertexBufferElement>& VertexBufferLayout::GetElements() const
 {
 	return mElements;

@@ -14,3 +14,5 @@ struct Mesh
     Material            mMaterial;
 	unsigned int		mCount = 0; // if zero then it's indexed so use IndexBuffer
 };
+
+void FinalizeMesh(Mesh& mesh, const VertexBufferLayout& vbl);

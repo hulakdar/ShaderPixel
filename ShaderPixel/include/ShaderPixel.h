@@ -19,4 +19,6 @@ public:
 	virtual void preframe() override;
 	virtual void onKey(int key, int scancode, int action, int mods) override;
 private:
+	Shader debugShader;
+	Texture debugTexture;
 };

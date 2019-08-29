@@ -20,7 +20,7 @@ IndexBuffer::IndexBuffer(const std::vector<unsigned int>& Data) : IndexBuffer(Da
 
 IndexBuffer::~IndexBuffer()
 {
-	GLCall(glDeleteBuffers(1, &mRendererID));
+	//GLCall(glDeleteBuffers(1, &mRendererID));
 }
 
 void IndexBuffer::Bind(void) const
