@@ -1,20 +1,5 @@
 #include "Application.h"
-#include "Shader.h"
-#include "VertexBufferLayout.h"
-#include "VertexArray.h"
-#include "VertexBuffer.h"
-#include "glm/glm.hpp"
-#include "Mesh.h"
-
-struct Scene
-{
-	std::vector<Mesh> meshes;
-};
-
-struct Environment
-{
-	int kek;
-};
+#include "Renderer.h"
 
 struct AppMemory
 {
@@ -34,10 +19,4 @@ public:
 	virtual void preframe() override;
 	virtual void onKey(int key, int scancode, int action, int mods) override;
 private:
-	Shader mProgram;
-	Texture mTexture;
-	VertexBuffer		mVBO;
-	VertexArray			mVAO;
-	glm::mat4 mViewProjectionMatrix;
-	float mRotationAngle;
 };

@@ -2,6 +2,7 @@
 #include "VertexArray.h"
 #include "IndexBuffer.h"
 #include "Shader.h"
+#include "ShaderPixel.h"
 #include <iostream>
 #include "Wrapper.h"
 
@@ -17,39 +18,65 @@ namespace Renderer
 		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 	}
 
+	void ApplyMaterial(Material& material, Shader shader)
+	{
+		for (auto& It : material.mUniforms)
+		{
+			shader.SetUniform(It);
+		}
+	}
+
 	void Clear()
 	{
 		GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	}
 
-	void Draw(const VertexArray& Va, const Shader& Program, const IndexBuffer& Ib)
+	void Draw(Scene& scene, Shader shader, glm::mat4 viewProjection)
 	{
-		Program.Bind();
-		Va.Bind();
-		Ib.Bind();
-		GLCall(glDrawElements(GL_TRIANGLES, Ib.GetCount(), GL_UNSIGNED_INT, 0));
+		for (auto& model : scene.mModels)
+		{
+			glm::mat4 MVP = viewProjection * model.mModelSpace;
+			for (auto& mesh : model.mMeshes)
+			{
+				ApplyMaterial(mesh.mMaterial, shader);
+				shader.SetUniform("uMVP", MVP);
+				Draw(mesh);
+			}
+		}
 	}
 
-	void Draw(const VertexArray& Va, const Shader& Program, unsigned int Count)
+	void Draw(Mesh& mesh)
 	{
-		Program.Bind();
-		Va.Bind();
-		GLCall(glDrawArrays(GL_TRIANGLES, 0, Count));
+		if (mesh.mCount)
+			Draw(mesh.mVertexArray, mesh.mCount);
+		else
+			Draw(mesh.mVertexArray, mesh.mIndexBuffer);
 	}
 
-	void DrawInstanced(const VertexArray& Va, const Shader& Program, const IndexBuffer& Ib)
+	void Draw(const VertexArray& va, const IndexBuffer& ib)
 	{
-		Program.Bind();
-		Va.Bind();
-		Ib.Bind();
+		va.Bind();
+		ib.Bind();
+		GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, 0));
+	}
+
+	void Draw(const VertexArray& va, unsigned int count)
+	{
+		va.Bind();
+		GLCall(glDrawArrays(GL_TRIANGLES, 0, count));
+	}
+
+	void DrawInstanced(const VertexArray& va, const IndexBuffer& ib)
+	{
+		va.Bind();
+		ib.Bind();
 		std::cerr << "Instanced is not implemented yet \n";
-		//GLCall(glDrawElementsInstanced(GL_TRIANGLES, Ib.GetCount(), GL_UNSIGNED_INT, 0));
+		//GLCall(glDrawElementsInstanced(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, 0));
 	}
 
-	void DrawInstanced(const VertexArray& Va, const Shader& Program, unsigned int Count)
+	void DrawInstanced(const VertexArray& va, unsigned int count)
 	{
-		Program.Bind();
-		Va.Bind();
+		va.Bind();
 		std::cerr << "Instanced is not implemented yet \n";
 		//GLCall(glDrawArraysInstanced(GL_TRIANGLES, 0, Count));
 	}

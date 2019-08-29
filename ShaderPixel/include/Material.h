@@ -5,13 +5,7 @@
 #include <memory>
 #include <vector>
 
-class Material
+struct Material
 {
-private:
-    Shader                  mShader;
-    //std::vector<std::shared_ptr<Texture>> mTextures;
     std::vector<Uniform>    mUniforms;
-public:
-	Material();
-	void Apply();
 };

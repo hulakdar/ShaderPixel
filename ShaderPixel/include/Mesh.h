@@ -6,16 +6,11 @@
 #include "IndexBuffer.h"
 #include "Material.h"
 
-class Mesh
+struct Mesh
 {
-private:
     VertexBuffer		mVertexBuffer;
-    VertexBufferLayout	mVertexBufferLayout;
+    IndexBuffer			mIndexBuffer;
     VertexArray			mVertexArray;
     Material            mMaterial;
-public:
-	Mesh(const std::vector<float>& Verteces, const Material& Material);
-	Mesh(const std::vector<float>& Verteces, const Shader& Shader);
-	Mesh(const std::vector<float>& Verteces);
-	Mesh();
+	unsigned int		mCount = 0; // if zero then it's indexed so use IndexBuffer
 };

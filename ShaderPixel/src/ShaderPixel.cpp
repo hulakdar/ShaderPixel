@@ -7,7 +7,6 @@
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <tiny_obj_loader.h>
-#include "Renderer.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
 
@@ -70,22 +69,25 @@ void ShaderPixel::update()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	mViewProjectionMatrix = glm::perspective(glm::radians(65.0f), 1.f, 0.1f, 100.0f) * glm::translate(glm::mat4(1), glm::vec3(0.0f, 5 * sin(mRotationAngle), -3.0f));
+	static float mRotationAngle;
+	glm::mat4 mViewProjectionMatrix =
+		glm::perspective(
+			glm::radians(65.0f), 1.f, 0.1f, 100.0f) *
+			glm::translate(glm::mat4(1),
+		glm::vec3(0.0f, 5 * sin(mRotationAngle), -3.0f));
 
+	AppMemory* mem = getHost().mMemory;
 	const glm::vec3 LightPosition(0.f, 0.f, -10.f);
 
-	mProgram.SetUniform("uViewProjection", mViewProjectionMatrix);
-	mProgram.SetUniform("uTime", (float)glfwGetTime());
-	mProgram.SetUniform("uTex", 0);
-	mTexture.Bind();
-	float angle = mRotationAngle;
-	for (auto& Position : CubePositions)
-	{
-		const glm::mat4 Model = glm::rotate(glm::translate(glm::mat4(1.f), Position), mRotationAngle, glm::vec3(0.f, 1.f, 0.f));
+	Shader debugShader;
 
-		mProgram.SetUniform("uModel", Model);
-		Renderer::Draw(mVAO, mProgram, 36);
-	}
+	float angle = mRotationAngle;
+	//for (auto& Position : CubePositions)
+	//{
+	//	const glm::mat4 Model = glm::rotate(glm::translate(glm::mat4(1.f), Position), mRotationAngle, glm::vec3(0.f, 1.f, 0.f));
+
+	//}
+	Renderer::Draw(mem->scene, debugShader, mViewProjectionMatrix);
 
 	mRotationAngle += 0.001f;
 }
@@ -142,29 +144,32 @@ void ShaderPixel::init(Host* host)
 //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 //IM_ASSERT(font != NULL);
 
-{
+//	{
+//		tinyobj::ObjReader objReader;
+//		objReader.ParseFromFile("../content/sibenik/sibenik.obj");
+//		assert(objReader.Valid());
+//
+//		auto& shapes = objReader.GetShapes();
+//		auto& attributes = objReader.GetAttrib();
+//		auto& materials = objReader.GetMaterials();
+//		auto& vertices = attributes.GetVertices();
+//	}
+
 	Renderer::Init();
-	tinyobj::ObjReader objReader;
-	objReader.ParseFromFile("../content/sibenik/sibenik.obj");
-	assert(objReader.Valid());
 
-	auto& shapes = objReader.GetShapes();
-	auto& attributes = objReader.GetAttrib();
-	auto& materials = objReader.GetMaterials();
-	auto& vertices = attributes.GetVertices();
-}
+    VertexBufferLayout	vbl;
+	Mesh mesh;
+	vbl.Push<float>(3);
+	vbl.Push<float>(2);
+	vbl.Push<float>(3);
+	mesh.mVertexArray.AddBuffer(mesh.mVertexBuffer, vbl);
+	mesh.mCount = 36;
 
-	float vertices[] = {
-	   -0.6f, -0.4f, 1.f,
-		0.6f, -0.4f, 1.f,
-		0.f,   0.6f, 1.f
-	};
+	Model model;
+	model.mMeshes.push_back(mesh);
+	model.mModelSpace = glm::translate(glm::mat4(1), glm::vec3(0, 1, -10));
 
-	VertexBufferLayout	mVBL;
-	mVBL.Push<float>(3);
-	mVBL.Push<float>(2);
-	mVBL.Push<float>(3);
-	mVAO.AddBuffer(mVBO, mVBL);
+	host->mMemory->scene.mModels.push_back(model);
 }
 
 void ShaderPixel::deinit()

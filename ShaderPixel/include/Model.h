@@ -3,7 +3,8 @@
 #include <vector>
 #include "Mesh.h"
 
-class Model
+struct Model
 {
-	std::vector<Mesh> mMeshes;
+	glm::mat4			mModelSpace;
+	std::vector<Mesh>	mMeshes;
 };
