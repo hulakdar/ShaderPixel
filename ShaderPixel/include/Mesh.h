@@ -6,6 +6,7 @@
 #include "IndexBuffer.h"
 #include "Material.h"
 
+typedef uint32_t MeshID;
 struct Mesh
 {
     VertexBuffer		mVertexBuffer;

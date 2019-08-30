@@ -1,5 +1,7 @@
 #include "ShaderPixel.h"
 #include "Host.h"
+#include "Resources.h"
+
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
@@ -66,22 +68,23 @@ void ShaderPixel::update()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	AppMemory* mem = getHost().mMemory;
+
 	static float RunningOffset;
 	glm::mat4 mViewProjectionMatrix =
 		glm::perspective(
-			glm::radians(65.0f), 1.f, 0.1f, 100.0f) *
-			glm::translate(glm::mat4(1),
-		glm::vec3(0.0f, 5 * sin(RunningOffset), -3.0f));
+			glm::radians(65.0f), mAspectRatio, 0.1f, 100.0f) *
+		glm::rotate(glm::translate(glm::mat4(1), glm::vec3(0.0f, 3 * sin(2 * RunningOffset), -3.0f)),
+			RunningOffset, glm::normalize(glm::vec3(0, 0, 1.f)));
 
-	AppMemory* mem = getHost().mMemory;
-	const glm::vec3 LightPosition(0.f, 0.f, -10.f);
-
-	float angle = RunningOffset;
-	Renderer::Draw(mem->scene, debugShader, mViewProjectionMatrix);
-
-	RunningOffset += 0.001f;
+	Renderer::Draw(mem->scene, mDebugShader, mViewProjectionMatrix);
+	RunningOffset += 0.01f;
 }
 
+ShaderPixel::~ShaderPixel()
+{
+	Resources::Clear();
+}
 
 void ShaderPixel::onKey(int key, int scancode, int action, int mods)
 {
@@ -147,21 +150,27 @@ void ShaderPixel::init(Host* host)
 
 	Renderer::Init();
 
+	auto modelSpace = glm::translate(glm::mat4(1), glm::vec3(0, 1, -10));
+	MeshID NewMeshID = (MeshID)Resources::Meshes.size();
+	Resources::Meshes.emplace_back();
+	Mesh *mesh = Resources::GetMesh(NewMeshID);
+	mesh->mCount = 36;
+
+	TextureID NewTextureID = (TextureID)Resources::Textures.size();
+	Resources::Textures.emplace_back();
+
+	Uniform tex;
+	tex.Type = Uniform::TEX;
+	tex.tex = NewTextureID;
+	tex.Name = "uTex";
+
+	host->mMemory->scene.mModels.emplace_back(Model{ modelSpace, {NewMeshID} });
+
     VertexBufferLayout	vbl;
 	vbl.Push<float>(3);
 	vbl.Push<float>(2);
 	vbl.Push<float>(3);
-
-	auto modelSpace = glm::translate(glm::mat4(1), glm::vec3(0, 1, -10));
-	host->mMemory->scene.mModels.emplace_back(Model{ modelSpace, {Mesh{} } });
-	auto& model = host->mMemory->scene.mModels.back();
-	model.mMeshes[0].mCount = 36;
-	Uniform tex;
-	tex.Type = Uniform::TEX;
-	tex.tex = debugTexture.mRendererID;
-	tex.Name = "uTex";
-	model.mMeshes[0].mMaterial.mUniforms.push_back(tex);
-	FinalizeMesh(model.mMeshes[0], vbl);
+	FinalizeMesh(*mesh, vbl);
 }
 
 void ShaderPixel::deinit()
@@ -173,6 +182,7 @@ void ShaderPixel::deinit()
 void ShaderPixel::updateWindowSize(int x, int y)
 {
 	glViewport(0, 0, x, y);
+	mAspectRatio = x / (float)y;
 }
 
 void ShaderPixel::renderUI()

@@ -2,6 +2,7 @@
 #include <string>
 #include "glm/glm.hpp"
 
+typedef uint32_t TextureID;
 class Texture
 {
 public:

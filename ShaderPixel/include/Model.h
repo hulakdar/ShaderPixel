@@ -6,5 +6,5 @@
 struct Model
 {
 	glm::mat4			mModelSpace;
-	std::vector<Mesh>	mMeshes;
+	std::vector<MeshID>	mMeshes;
 };

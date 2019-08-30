@@ -161,9 +161,9 @@ void Host::swapBuffers()
 
 Host::~Host()
 {
+	delete mApplication;
     ImGui_ImplGlfw_Shutdown();
 	glfwDestroyWindow(mWindow);
 	glfwTerminate();
-	delete mApplication;
 }
 

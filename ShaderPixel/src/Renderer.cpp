@@ -3,11 +3,12 @@
 #include "IndexBuffer.h"
 #include "Shader.h"
 #include "ShaderPixel.h"
-#include <iostream>
 #include "Wrapper.h"
+#include "Resources.h"
 
+#include <GLFW/glfw3.h>
 #include <glad/glad.h>
-#include "GLFW/glfw3.h"
+#include <iostream>
 
 namespace Renderer
 {
@@ -37,9 +38,10 @@ namespace Renderer
 		for (auto& model : scene.mModels)
 		{
 			glm::mat4 MVP = viewProjection * model.mModelSpace;
-			for (auto& mesh : model.mMeshes)
+			for (auto& meshID : model.mMeshes)
 			{
-				ApplyMaterial(mesh.mMaterial, shader);
+				Mesh* mesh = Resources::GetMesh(meshID);
+				ApplyMaterial(mesh->mMaterial, shader);
 				shader.SetUniform("uMVP", MVP);
 				shader.SetUniform("uTime", (float)glfwGetTime());
 				Draw(mesh);
@@ -47,12 +49,12 @@ namespace Renderer
 		}
 	}
 
-	void Draw(Mesh& mesh)
+	void Draw(Mesh* mesh)
 	{
-		if (mesh.mCount)
-			Draw(mesh.mVertexArray, mesh.mCount);
+		if (mesh->mCount)
+			Draw(mesh->mVertexArray, mesh->mCount);
 		else
-			Draw(mesh.mVertexArray, mesh.mIndexBuffer);
+			Draw(mesh->mVertexArray, mesh->mIndexBuffer);
 	}
 
 	void Draw(const VertexArray& va, const IndexBuffer& ib)

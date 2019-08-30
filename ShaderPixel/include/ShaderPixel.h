@@ -18,7 +18,8 @@ public:
 	virtual void renderUI() override;
 	virtual void preframe() override;
 	virtual void onKey(int key, int scancode, int action, int mods) override;
+	virtual ~ShaderPixel();
 private:
-	Shader debugShader;
-	Texture debugTexture;
+	Shader	mDebugShader;
+	float	mAspectRatio = 1.f;
 };

@@ -1,4 +1,6 @@
 #pragma once
+#include "Texture.h"
+
 #include <string>
 #include <glm/glm.hpp>
 #include <glad/glad.h>
@@ -13,7 +15,7 @@ struct Uniform
 		glm::ivec2 iv2;
 		glm::ivec3 iv3;
 		glm::ivec4 iv4;
-		GLuint	tex;
+		TextureID	tex;
 	};
 	enum {
 		FLOAT,
