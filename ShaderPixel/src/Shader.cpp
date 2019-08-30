@@ -1,9 +1,11 @@
 #include "Shader.h"
 #include "Renderer.h"
+#include "Wrapper.h"
+#include "Resources.h"
+
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "Wrapper.h"
 #include <glad/glad.h>
 
 static std::map<std::string, int> sShaderCache;
@@ -190,6 +192,8 @@ void Shader::SetUniform(const Uniform& Uniform)
 		SetUniform(Uniform.Name, Uniform.iv4);
 	}
 	case Uniform::TEX: {
+		Texture *tex = Resources::GetTexture(Uniform.tex);
+		tex->Bind();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,Uniform.tex);
 		SetUniform(Uniform.Name, 0);
