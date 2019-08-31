@@ -61,6 +61,7 @@ namespace Renderer
 	{
 		va.Bind();
 		ib.Bind();
+		//GLCall(glDrawArrays(GL_TRIANGLES, 0, ib.GetCount() * 3));
 		GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, 0));
 	}
 

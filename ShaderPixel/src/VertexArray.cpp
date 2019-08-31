@@ -6,6 +6,8 @@
 
 unsigned int VertexArray::s_CurrentlyBound = 0;
 
+#pragma optimization("", off)
+
 VertexArray::VertexArray()
 {
 	// generating the vertex buffer

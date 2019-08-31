@@ -36,7 +36,7 @@ Host* Host::FromWindow(GLFWwindow* window)
 void Host::onKey(int key, int scancode, int action, int mods)
 {
 	if (mApplication)
-		;//mApplication->onKey(key, scancode, action, mods);
+		mApplication->onKey(key, scancode, action, mods);
 }
 
 void Host::preframe()

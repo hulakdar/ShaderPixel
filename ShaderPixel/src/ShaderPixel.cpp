@@ -12,6 +12,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
 
+#pragma optimization("", off)
+
 Host*& staticHost()
 {
 	static Host *sHost;
@@ -71,11 +73,24 @@ void ShaderPixel::update()
 	AppMemory* mem = getHost().mMemory;
 
 	static float RunningOffset;
+
+	static float Near = 1;
+	ImGui::SliderFloat("Near", &Near, 0.1, 3);
+	mDebugShader.SetUniform("Near", Near);
+
+	static float Far = 1;
+	ImGui::SliderFloat("Far", &Far, 6, 90000);
+	mDebugShader.SetUniform("Far", Far);
+
+	static float uPow = 1;
+	ImGui::SliderFloat("uPow", &uPow, 0.01, 32);
+	mDebugShader.SetUniform("uPow", uPow);
+
 	glm::mat4 mViewProjectionMatrix =
 		glm::perspective(
-			glm::radians(65.0f), mAspectRatio, 0.1f, 100.0f) *
-		glm::rotate(glm::translate(glm::mat4(1), glm::vec3(0.0f, 3 * sin(2 * RunningOffset), -3.0f)),
-			RunningOffset, glm::normalize(glm::vec3(0, 0, 1.f)));
+			glm::radians(65.0f), mAspectRatio, Near, Far) *
+		glm::rotate(glm::translate(glm::mat4(1), CameraPosition),
+			angle, glm::normalize(glm::vec3(0, 1, 0)));
 
 	Renderer::Draw(mem->scene, mDebugShader, mViewProjectionMatrix);
 	RunningOffset += 0.01f;
@@ -88,6 +103,26 @@ ShaderPixel::~ShaderPixel()
 
 void ShaderPixel::onKey(int key, int scancode, int action, int mods)
 {
+
+	if (scancode == 16)
+		CameraPosition.y -= 1.f;
+	if (scancode == 18)
+		CameraPosition.y += 1.f;
+	if (scancode == 17)
+		CameraPosition.z += 1.f;
+	if (scancode == 31)
+		CameraPosition.z -= 1.f;
+	if (scancode == 32)
+		CameraPosition.x -= 1.f;
+	if (scancode == 30)
+		CameraPosition.x += 1.f;
+
+	if (scancode == 331)
+		angle -= 0.1f;
+	if (scancode == 333)
+		angle += 0.1f;
+
+
 	ImGui::Text("%d %d %d %d", key, scancode, action, mods);
 }
 
@@ -136,41 +171,44 @@ void ShaderPixel::init(Host* host)
 //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
 //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 //IM_ASSERT(font != NULL);
-
-//	{
-//		tinyobj::ObjReader objReader;
-//		objReader.ParseFromFile("../content/sibenik/sibenik.obj");
-//		assert(objReader.Valid());
-//
-//		auto& shapes = objReader.GetShapes();
-//		auto& attributes = objReader.GetAttrib();
-//		auto& materials = objReader.GetMaterials();
-//		auto& vertices = attributes.GetVertices();
-//	}
-
 	Renderer::Init();
 
-	auto modelSpace = glm::translate(glm::mat4(1), glm::vec3(0, 1, -10));
-	MeshID NewMeshID = (MeshID)Resources::Meshes.size();
-	Resources::Meshes.emplace_back();
-	Mesh *mesh = Resources::GetMesh(NewMeshID);
-	mesh->mCount = 36;
+	Scene &scene = host->mMemory->scene;
 
-	TextureID NewTextureID = (TextureID)Resources::Textures.size();
+	tinyobj::ObjReader objReader;
+	objReader.ParseFromFile("../content/sponza/sponza.obj");
+	assert(objReader.Valid());
+
+	auto& shapes = objReader.GetShapes();
+	auto& attributes = objReader.GetAttrib();
+	auto& materials = objReader.GetMaterials();
+
+	scene.mModels.emplace_back();
 	Resources::Textures.emplace_back();
 
-	Uniform tex;
-	tex.Type = Uniform::TEX;
-	tex.tex = NewTextureID;
-	tex.Name = "uTex";
+	Resources::Meshes.reserve(shapes.size());
+	for (size_t i = 0; i < shapes.size(); i++)
+	{
+		MeshID NewMeshID = (MeshID)Resources::Meshes.size();
+		scene.mModels[0].mMeshes.push_back(NewMeshID);
+		Resources::Meshes.emplace_back();
+		Mesh *mesh = Resources::GetMesh(NewMeshID);
+		mesh->mIndexBuffer = IndexBuffer(shapes[i].mesh.indices, shapes[i].mesh.num_face_vertices);
+		mesh->mVertexBuffer = VertexBuffer(attributes.vertices);
 
-	host->mMemory->scene.mModels.emplace_back(Model{ modelSpace, {NewMeshID} });
+		//TextureID NewTextureID = (TextureID)Resources::Textures.size();
 
-    VertexBufferLayout	vbl;
-	vbl.Push<float>(3);
-	vbl.Push<float>(2);
-	vbl.Push<float>(3);
-	FinalizeMesh(*mesh, vbl);
+		//Uniform tex;
+		//tex.Type = Uniform::TEX;
+		//tex.tex = TextureBinding{ EMISSIVE, NewTextureID };
+		//tex.Name = "uTex";
+
+		VertexBufferLayout	vbl;
+		vbl.Push<float>(3);
+		//vbl.Push<float>(2);
+		//vbl.Push<float>(3);
+		FinalizeMesh(*mesh, vbl);
+	}
 }
 
 void ShaderPixel::deinit()

@@ -59,6 +59,12 @@ public:
 	template<typename T>
 	VertexBuffer(const std::vector<T>& Data);
 
+	VertexBuffer(const VertexBuffer&) = delete;
+	VertexBuffer& operator=(const VertexBuffer&) = delete;
+
+	VertexBuffer(VertexBuffer&&);
+	VertexBuffer& operator=(VertexBuffer&&);
+
 	~VertexBuffer();
 
 	void Bind(void) const ;

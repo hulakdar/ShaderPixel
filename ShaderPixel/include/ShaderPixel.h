@@ -22,4 +22,6 @@ public:
 private:
 	Shader	mDebugShader;
 	float	mAspectRatio = 1.f;
+	float	angle = 0.f;
+	glm::vec3 CameraPosition {0,0,0};
 };

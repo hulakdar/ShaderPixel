@@ -28,30 +28,25 @@ Texture::Texture(const std::string& Filepath) :
 	glGenTextures(1, &mRendererID);
 	Bind();
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(mType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(mType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(mType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(mType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mSize.x, mSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, mLocalBuffer);
+	if (mComponentCount == 4)
+		glTexImage2D(mType, 0, GL_RGBA8, mSize.x, mSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, mLocalBuffer);
+	else
+		glTexImage2D(mType, 0, GL_RGB8, mSize.x, mSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, mLocalBuffer);
 	Unbind();
 	//s_TextureCache.emplace(Filepath, *this);
 	free(mLocalBuffer);
 	std::cerr << "A new texture loaded: " << Filepath << "\n";
 }
 
-Texture::Texture(const Texture & Other)
+Texture::Texture(const Texture &&Other)
 {
-	*this = Other;
+	memcpy(this, &Other, sizeof(*this));
 }
-
-Texture& Texture::operator=(const Texture & Other)
-{
-	mRendererID = Other.mRendererID;
-	mFilepath = Other.mFilepath;
-	return *this;
-}
-
 
 Texture::~Texture()
 {

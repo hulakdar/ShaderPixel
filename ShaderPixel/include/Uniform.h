@@ -8,14 +8,14 @@
 struct Uniform
 {
 	union {
-		float scalar;
-		glm::vec2 v2;
-		glm::vec3 v3;
-		glm::vec4 v4;
-		glm::ivec2 iv2;
-		glm::ivec3 iv3;
-		glm::ivec4 iv4;
-		TextureID	tex;
+		float			scalar;
+		glm::vec2		v2;
+		glm::vec3		v3;
+		glm::vec4		v4;
+		glm::ivec2		iv2;
+		glm::ivec3		iv3;
+		glm::ivec4		iv4;
+		TextureBinding	tex;
 	};
 	enum {
 		FLOAT,

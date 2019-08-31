@@ -192,11 +192,10 @@ void Shader::SetUniform(const Uniform& Uniform)
 		SetUniform(Uniform.Name, Uniform.iv4);
 	}
 	case Uniform::TEX: {
-		Texture *tex = Resources::GetTexture(Uniform.tex);
-		tex->Bind();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,Uniform.tex);
-		SetUniform(Uniform.Name, 0);
+		TextureBinding texBinding = Uniform.tex;
+		Texture *tex = Resources::GetTexture(texBinding.id);
+		tex->Bind(texBinding.usage);
+		SetUniform(Uniform.Name, texBinding.usage);
 	}
 	default:
 		break;

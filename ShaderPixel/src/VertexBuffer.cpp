@@ -1,6 +1,8 @@
 #include "VertexBuffer.h"
 #include "Wrapper.h"
+
 #include <glad/glad.h>
+#include <algorithm>
 
 unsigned int VertexBuffer::s_CurrentlyBound = 0;
 
@@ -15,9 +17,20 @@ VertexBuffer::VertexBuffer(const void *Data, size_t Size)
 }
 
 
+VertexBuffer::VertexBuffer(VertexBuffer &&Other)
+{
+	*this = std::move(Other);
+}
+
+VertexBuffer & VertexBuffer::operator=(VertexBuffer &&Other)
+{
+	std::swap(Other.mRendererID, mRendererID);
+	return *this;
+}
+
 VertexBuffer::~VertexBuffer()
 {
-	//GLCall(glDeleteBuffers(1, &mRendererID));
+	GLCall(glDeleteBuffers(1, &mRendererID));
 }
 
 void VertexBuffer::Bind(void) const

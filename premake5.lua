@@ -115,6 +115,7 @@ project "Host"
 		"ShaderPixel/include",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.TinyObjLoader}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
