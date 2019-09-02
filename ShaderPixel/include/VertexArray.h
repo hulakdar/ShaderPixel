@@ -11,7 +11,13 @@ public:
 	VertexArray(const class VertexBuffer& Vb, const class VertexBufferLayout& Vbl);
 	~VertexArray();
 
-	void AddBuffer(const class VertexBuffer& Vb, const class VertexBufferLayout& Vbl);
+	VertexArray(VertexArray&&);
+	VertexArray& operator=(VertexArray&&);
+
+	VertexArray(const VertexArray&) = delete;
+	VertexArray& operator=(const VertexArray&) = delete;
+
+	void AddBuffer(const class VertexBuffer& Vb, const class VertexBufferLayout& Vbl, unsigned int attributeOffset = 0);
 	void Bind() const ;
 	void Unbind() const ;
 };

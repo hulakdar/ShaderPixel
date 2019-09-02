@@ -18,6 +18,7 @@ struct Host
 	static Host *FromWindow(GLFWwindow* window);
 
 	void	onKey(int key, int scancode, int action, int mods);
+	void	onMouseMove(float x, float y);
 	void	preframe();
 	void	update();
 	bool	shouldClose();
@@ -25,6 +26,7 @@ struct Host
 	void	updateWindowSize(int x, int y);
 
 	float		 mScale;
+
 	AppMemory	*mMemory;
 
 	// allocators for DLL
@@ -36,8 +38,9 @@ private:
 	Timestamp		mDllTimestamp;
 	Application		*mApplication;
 	int				mWidth, mHeight;
+	float			mMouseX, mMouseY;
 	GLFWwindow		*mWindow;
+	bool			mForceReload;
 
 	void			updateDLL();
-	bool mForceReload;
 };

@@ -78,7 +78,7 @@ void ShaderPixel::update()
 	ImGui::SliderFloat("Near", &Near, 0.1, 3);
 	mDebugShader.SetUniform("Near", Near);
 
-	static float Far = 1;
+	static float Far = 90000;
 	ImGui::SliderFloat("Far", &Far, 6, 90000);
 	mDebugShader.SetUniform("Far", Far);
 
@@ -99,6 +99,14 @@ void ShaderPixel::update()
 ShaderPixel::~ShaderPixel()
 {
 	Resources::Clear();
+}
+
+void ShaderPixel::onMouseMove(float x, float y, float dX, float dY)
+{
+	(void)x;
+	(void)y;
+
+	angle += dX / mWindowSize.x;
 }
 
 void ShaderPixel::onKey(int key, int scancode, int action, int mods)
@@ -183,18 +191,17 @@ void ShaderPixel::init(Host* host)
 	auto& attributes = objReader.GetAttrib();
 	auto& materials = objReader.GetMaterials();
 
-	scene.mModels.emplace_back();
+	scene.models.emplace_back();
 	Resources::Textures.emplace_back();
 
 	Resources::Meshes.reserve(shapes.size());
 	for (size_t i = 0; i < shapes.size(); i++)
 	{
 		MeshID NewMeshID = (MeshID)Resources::Meshes.size();
-		scene.mModels[0].mMeshes.push_back(NewMeshID);
-		Resources::Meshes.emplace_back();
-		Mesh *mesh = Resources::GetMesh(NewMeshID);
-		mesh->mIndexBuffer = IndexBuffer(shapes[i].mesh.indices, shapes[i].mesh.num_face_vertices);
-		mesh->mVertexBuffer = VertexBuffer(attributes.vertices);
+		scene.models[0].mMeshes.push_back(NewMeshID);
+		scene.models[0].mName = shapes[i].name;
+		Resources::Meshes.push_back(MakeMesh(shapes[i].mesh, attributes, materials));
+		Mesh* mesh = Resources::GetMesh(NewMeshID);
 
 		//TextureID NewTextureID = (TextureID)Resources::Textures.size();
 
@@ -205,9 +212,9 @@ void ShaderPixel::init(Host* host)
 
 		VertexBufferLayout	vbl;
 		vbl.Push<float>(3);
-		//vbl.Push<float>(2);
-		//vbl.Push<float>(3);
-		FinalizeMesh(*mesh, vbl);
+		vbl.Push<float>(3);
+		vbl.Push<float>(2);
+		mesh->mVertexArray.AddBuffer(mesh->mVertexBuffer, vbl);
 	}
 }
 
@@ -219,6 +226,7 @@ void ShaderPixel::deinit()
 
 void ShaderPixel::updateWindowSize(int x, int y)
 {
+	mWindowSize = {x,y};
 	glViewport(0, 0, x, y);
 	mAspectRatio = x / (float)y;
 }

@@ -10,22 +10,22 @@ class IndexBuffer;
 
 struct Camera
 {
-	glm::mat4 mViewProjection;
-	glm::vec3 mPosition;
-	glm::vec2 mAngles;
+	glm::mat4 viewProjection;
+	glm::vec3 position;
+	glm::vec2 angles;
 };
 
 struct Light
 {
-	glm::mat4 mShadowSpace;
-	glm::vec3 mLightDir;
+	glm::mat4 shadowSpace;
+	glm::vec3 lightDir;
 };
 
 struct Scene
 {
-	std::vector<Model>	mModels;
-	Camera				mCamera;
-	Light				mLight;
+	std::vector<Model>	models;
+	Camera				camera;
+	Light				light;
 };
 
 namespace Renderer

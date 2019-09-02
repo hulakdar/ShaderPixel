@@ -10,7 +10,7 @@ out vec4 fragColor;
 // More (oudated, half broken) info here:  http://iquilezles.org/www/articles/juliasets3d/juliasets3d.htm
 
 
-// antialais level (1, 2, 3...)
+// antialias level (1, 2, 3...)
 #define AA 1
 
 // undefine this to use numerical normals (central differences)

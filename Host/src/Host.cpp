@@ -14,6 +14,12 @@ namespace { namespace Callbacks {
 	{
 		std::cerr << "GLFW Sent error " << error << ": " << description << "\n";
 	}
+
+	void MousePosition(GLFWwindow* window, double x, double y)
+	{
+		Host* host = Host::FromWindow(window);
+		host->onMouseMove(x, y);
+	}
 	void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		Host* host = Host::FromWindow(window);
@@ -39,6 +45,16 @@ void Host::onKey(int key, int scancode, int action, int mods)
 		mApplication->onKey(key, scancode, action, mods);
 }
 
+void Host::onMouseMove(float x, float y)
+{
+	float deltaX = x - mMouseX;
+	float deltaY = y - mMouseY;
+	mMouseX = x;
+	mMouseY = y;
+	mApplication->onMouseMove(x, y, deltaX, deltaX);
+	//glfwSetCursorPos(mWindow, mWidth / 2, mHeight / 2);
+}
+
 void Host::preframe()
 {
 	updateDLL();
@@ -52,6 +68,7 @@ Host::Host(const std::string &dllPath)
 	, mApplication(nullptr)
 	, allocate(&malloc)
 	, deallocate(&free)
+	, mForceReload(false)
 {
 
 	glfwSetErrorCallback(Callbacks::Error);
@@ -73,6 +90,7 @@ Host::Host(const std::string &dllPath)
 
 	glfwGetFramebufferSize(mWindow, &mWidth, &mHeight);
 	glfwSetKeyCallback(mWindow, Callbacks::Keyboard);
+	glfwSetCursorPosCallback(mWindow, Callbacks::MousePosition);
 	glfwSetFramebufferSizeCallback(mWindow, Callbacks::FramebufferSize);
 
 	glfwMakeContextCurrent(mWindow);
@@ -82,7 +100,6 @@ Host::Host(const std::string &dllPath)
 
 	updateDLL();
 	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
-
 }
 
 void Host::updateWindowSize(int x, int y)
@@ -135,6 +152,7 @@ void Host::updateDLL()
 
 	mApplication = new ShaderPixel();
 	mApplication->init(this);
+	mApplication->updateWindowSize(mWidth, mHeight);
 #endif
 }
 

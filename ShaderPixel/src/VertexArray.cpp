@@ -6,8 +6,6 @@
 
 unsigned int VertexArray::s_CurrentlyBound = 0;
 
-#pragma optimization("", off)
-
 VertexArray::VertexArray()
 {
 	// generating the vertex buffer
@@ -26,7 +24,18 @@ VertexArray::~VertexArray()
 	GLCall(glDeleteVertexArrays(1, &mRendererID));
 }
 
-void VertexArray::AddBuffer(const VertexBuffer& Vb, const VertexBufferLayout& Layout)
+VertexArray::VertexArray(VertexArray&& Other)
+{
+	*this = std::move(Other);
+}
+
+VertexArray& VertexArray::operator=(VertexArray&& Other)
+{
+	std::swap(mRendererID, Other.mRendererID);
+	return *this;
+}
+
+void VertexArray::AddBuffer(const VertexBuffer& Vb, const VertexBufferLayout& Layout, unsigned int attributeOffset)
 {
 	Vb.Bind();
 	Bind();
@@ -37,9 +46,9 @@ void VertexArray::AddBuffer(const VertexBuffer& Vb, const VertexBufferLayout& La
 	{
 		const auto& Element = Elements[i];
 		// binding the array
-		GLCall(glEnableVertexAttribArray(i));
+		GLCall(glEnableVertexAttribArray(i + attributeOffset));
 		// setting up vertex position attribute
-		GLCall(glVertexAttribPointer(i, Element.Count, Element.Type, Element.Normalized, Layout.GetStride(), (const void *)Offset));
+		GLCall(glVertexAttribPointer(i + attributeOffset, Element.Count, Element.Type, Element.Normalized, Layout.GetStride(), (const void *)Offset));
 
 		Offset += Element.Count * GetSizeOfType(Element.Type);
 	}

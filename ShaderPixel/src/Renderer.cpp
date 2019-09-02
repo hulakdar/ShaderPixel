@@ -35,7 +35,7 @@ namespace Renderer
 
 	void Draw(Scene& scene, Shader& shader, glm::mat4 viewProjection)
 	{
-		for (auto& model : scene.mModels)
+		for (auto& model : scene.models)
 		{
 			glm::mat4 MVP = viewProjection * model.mModelSpace;
 			for (auto& meshID : model.mMeshes)
@@ -54,7 +54,7 @@ namespace Renderer
 		if (mesh->mCount)
 			Draw(mesh->mVertexArray, mesh->mCount);
 		else
-			Draw(mesh->mVertexArray, mesh->mIndexBuffer);
+			;//Draw(mesh->mVertexArray, mesh->mIndexBuffer);
 	}
 
 	void Draw(const VertexArray& va, const IndexBuffer& ib)

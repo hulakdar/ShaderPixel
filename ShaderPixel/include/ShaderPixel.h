@@ -18,10 +18,12 @@ public:
 	virtual void renderUI() override;
 	virtual void preframe() override;
 	virtual void onKey(int key, int scancode, int action, int mods) override;
+	virtual void onMouseMove(float x, float y, float dX, float dY) override;
 	virtual ~ShaderPixel();
 private:
 	Shader	mDebugShader;
 	float	mAspectRatio = 1.f;
 	float	angle = 0.f;
 	glm::vec3 CameraPosition {0,0,0};
+	glm::vec2 mWindowSize{ 0,0 };
 };
