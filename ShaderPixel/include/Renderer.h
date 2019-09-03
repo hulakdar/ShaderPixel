@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Entity.h"
 #include "Model.h"
 
 /* Forward declarations */
