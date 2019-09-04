@@ -111,7 +111,6 @@ void ShaderPixel::onMouseMove(float x, float y, float dX, float dY)
 
 void ShaderPixel::onKey(int key, int scancode, int action, int mods)
 {
-
 	if (scancode == 16)
 		CameraPosition.y -= 1.f;
 	if (scancode == 18)
