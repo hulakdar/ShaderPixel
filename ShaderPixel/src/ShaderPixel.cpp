@@ -3,6 +3,7 @@
 #include "Resources.h"
 
 #include <iostream>
+#include <thread>
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 #include <stb_image.h>
@@ -11,8 +12,6 @@
 #include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
-
-#pragma optimization("", off)
 
 Host*& staticHost()
 {
@@ -70,30 +69,81 @@ void ShaderPixel::update()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	AppMemory* mem = getHost().mMemory;
+	Host* host = staticHost();
+	AppMemory* mem = host->mMemory;
 
 	static float RunningOffset;
 
 	static float Near = 1;
-	ImGui::SliderFloat("Near", &Near, 0.1, 3);
-	mDebugShader.SetUniform("Near", Near);
-
 	static float Far = 90000;
-	ImGui::SliderFloat("Far", &Far, 6, 90000);
-	mDebugShader.SetUniform("Far", Far);
-
 	static float uPow = 1;
-	ImGui::SliderFloat("uPow", &uPow, 0.01, 32);
-	mDebugShader.SetUniform("uPow", uPow);
 
+	Shader *defaultShader = Resources::GetShader(0);
+
+	ImGui::SliderFloat("Near", &Near, 0.1f, 3.f);
+	ImGui::SliderFloat("Far", &Far, 6.f, 90000.f);
+	
+	glm::mat4 cameraRotation = glm::rotate(
+		glm::rotate(glm::mat4(1),
+		mCameraAngles.y, glm::vec3(1, 0, 0)),
+		mCameraAngles.x, glm::vec3(0, 1, 0)
+	);
+
+	glm::mat4 cameraTranslation = glm::translate(glm::mat4(1), mCameraPosition);
 	glm::mat4 mViewProjectionMatrix =
-		glm::perspective(
-			glm::radians(65.0f), mAspectRatio, Near, Far) *
-		glm::rotate(glm::translate(glm::mat4(1), CameraPosition),
-			angle, glm::normalize(glm::vec3(0, 1, 0)));
+		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
+		* cameraRotation * cameraTranslation;
 
-	Renderer::Draw(mem->scene, mDebugShader, mViewProjectionMatrix);
+	Renderer::Draw(mem->scene, defaultShader, mViewProjectionMatrix);
 	RunningOffset += 0.01f;
+
+
+
+
+	// camera movement 
+	{
+		mCameraForward = glm::vec3(0, 0, 1) * glm::mat3(cameraRotation);
+		mCameraRight = glm::cross(mCameraUp, mCameraForward);
+
+		bool SHIFT = glfwGetKey(host->mWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+
+		float speed = mSpeed * ((float)SHIFT + 1.f);
+
+		bool W = glfwGetKey(host->mWindow, GLFW_KEY_W) == GLFW_PRESS;
+		bool S = glfwGetKey(host->mWindow, GLFW_KEY_S) == GLFW_PRESS;
+		bool A = glfwGetKey(host->mWindow, GLFW_KEY_A) == GLFW_PRESS;
+		bool D = glfwGetKey(host->mWindow, GLFW_KEY_D) == GLFW_PRESS;
+		bool Q = glfwGetKey(host->mWindow, GLFW_KEY_Q) == GLFW_PRESS;
+		bool E = glfwGetKey(host->mWindow, GLFW_KEY_E) == GLFW_PRESS;
+
+		if (Q)
+			mCameraPosition -= mCameraUp * speed;
+		if (E)
+			mCameraPosition += mCameraUp * speed;
+		if (W)
+			mCameraPosition += mCameraForward * speed;
+		if (S)
+			mCameraPosition -= mCameraForward * speed;
+		if (A)
+			mCameraPosition += mCameraRight * speed;
+		if (D)
+			mCameraPosition -= mCameraRight * speed;
+
+
+		bool UP		= glfwGetKey(host->mWindow, GLFW_KEY_UP)	== GLFW_PRESS;
+		bool DOWN	= glfwGetKey(host->mWindow, GLFW_KEY_DOWN)	== GLFW_PRESS;
+		bool LEFT	= glfwGetKey(host->mWindow, GLFW_KEY_LEFT)	== GLFW_PRESS;
+		bool RIGHT	= glfwGetKey(host->mWindow, GLFW_KEY_RIGHT) == GLFW_PRESS;
+
+		if (LEFT)
+			mCameraAngles.x -= 0.1f;
+		if (RIGHT)
+			mCameraAngles.x += 0.1f;
+		if (DOWN)
+			mCameraAngles.y += 0.1f;
+		if (UP)
+			mCameraAngles.y -= 0.1f;
+	}
 }
 
 ShaderPixel::~ShaderPixel()
@@ -106,31 +156,104 @@ void ShaderPixel::onMouseMove(float x, float y, float dX, float dY)
 	(void)x;
 	(void)y;
 
-	angle += dX / mWindowSize.x;
+	if (glfwGetMouseButton(staticHost()->mWindow, GLFW_MOUSE_BUTTON_2) != GLFW_PRESS)
+		return;
+
+	mCameraAngles.x += dX / mWindowSize.x;
+	mCameraAngles.y += dY / mWindowSize.y;
+}
+
+void ShaderPixel::onScroll(float x, float y)
+{
+	(void)x;
+
+	mSpeed += y;
+	mSpeed = glm::clamp(mSpeed, 0.f, 20.f);
 }
 
 void ShaderPixel::onKey(int key, int scancode, int action, int mods)
 {
-	if (scancode == 16)
-		CameraPosition.y -= 1.f;
-	if (scancode == 18)
-		CameraPosition.y += 1.f;
-	if (scancode == 17)
-		CameraPosition.z += 1.f;
-	if (scancode == 31)
-		CameraPosition.z -= 1.f;
-	if (scancode == 32)
-		CameraPosition.x -= 1.f;
-	if (scancode == 30)
-		CameraPosition.x += 1.f;
-
-	if (scancode == 331)
-		angle -= 0.1f;
-	if (scancode == 333)
-		angle += 0.1f;
-
-
 	ImGui::Text("%d %d %d %d", key, scancode, action, mods);
+}
+
+TextureData	LoadTextureData(const std::string& filename)
+{
+	uint8_t		*LocalBuffer;
+	glm::ivec2	Size;
+	int			ComponentCount;
+
+	std::string CompleteFilepath = Resources::BaseFilepath + filename;
+	LocalBuffer = stbi_load(CompleteFilepath.c_str(), &Size.x, &Size.y, &ComponentCount, 0);
+	if (!LocalBuffer)
+		__debugbreak();
+	return { LocalBuffer, Size, ComponentCount };
+}
+
+Uniform PushTexture(const std::string& filename, TextureUsage usage)
+{
+	Uniform tmp;
+	tmp.tex.id = Resources::PromisedTextureID();
+	tmp.tex.usage = usage;
+	tmp.type = UniformType::TEX;
+	switch (usage)
+	{
+	case Diffuse:
+		tmp.name = "uDiffuse";
+		break;
+	case Alpha:
+		tmp.name = "uAlpha";
+		break;
+	case Noise:
+		tmp.name = "uNoise";
+		break;
+	case Specular:
+		break;
+	case Specular_highlight:
+		break;
+	case Reflection:
+		break;
+	case Ambient:
+		break;
+	case Bump:
+		break;
+	case Displacement:
+		break;
+	default:
+		break;
+	}
+
+	Resources::QueuedTextures.push_back(LoadTextureData(filename));
+	return tmp;
+}
+
+void LoadMaterials(const std::vector<tinyobj::material_t>& materials)
+{
+	for (auto& It : materials)
+	{
+		MaterialID currentID = (MaterialID)Resources::Materials.size();
+		Resources::Materials.emplace_back();
+		Material* current = Resources::GetMaterial(currentID);
+
+		FeatureMask mask = 0;
+		if (!It.diffuse_texname.empty())
+			current->uniforms.push_back(PushTexture(It.diffuse_texname, TextureUsage::Diffuse));
+		else
+			std::cerr << "Currently only textured materials supported.\n";
+
+		if (!It.alpha_texname.empty())
+		{
+			current->uniforms.push_back(PushTexture(It.alpha_texname, TextureUsage::Alpha));
+			current->blendMode = BlendMode::Masked;
+			mask |= Feature::AlphaTexture;
+			mask |= Feature::Masked;
+			mask |= Feature::Dithered;
+		}
+		else
+			current->blendMode = BlendMode::Opaque;
+
+		if (mask)
+			current->shaderOverride = Shader::GetShaderWithFeatures(mask);
+	}
 }
 
 void ShaderPixel::init(Host* host)
@@ -179,42 +302,49 @@ void ShaderPixel::init(Host* host)
 //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 //IM_ASSERT(font != NULL);
 	Renderer::Init();
+	assert(Resources::Textures.size() == 1);
+	Resources::Textures.emplace_back("../content/BlueNoise64.tga");
 
+	// hack. need to figure out async shader compilation
+	Shader::GetShaderWithFeatures(7);
+
+	mFXAA = Resources::Shaders.size();
+	Resources::Shaders.emplace_back(
+	"../content/shaders/vertFXAA.shader",
+	"../content/shaders/fragFXAA.shader");
+	
 	Scene &scene = host->mMemory->scene;
 
 	tinyobj::ObjReader objReader;
-	objReader.ParseFromFile("../content/sponza/sponza.obj");
+	tinyobj::ObjReaderConfig config;
+	config.vertex_color = false;
+	objReader.ParseFromFile("../content/sponza/sponza.obj", config);
+
+	std::string OldPath = "../content/sponza/";
+
+	std::swap(OldPath, Resources::BaseFilepath);
 	assert(objReader.Valid());
 
 	auto& shapes = objReader.GetShapes();
 	auto& attributes = objReader.GetAttrib();
 	auto& materials = objReader.GetMaterials();
 
-	scene.models.emplace_back();
-	Resources::Textures.emplace_back();
+	std::thread MaterialLoader(&LoadMaterials, materials);
+	//LoadMaterials(materials);
 
-	Resources::Meshes.reserve(shapes.size());
+	scene.models.emplace_back();
+
+	Resources::Meshes.reserve(shapes.size() * 20);
 	for (size_t i = 0; i < shapes.size(); i++)
 	{
-		MeshID NewMeshID = (MeshID)Resources::Meshes.size();
-		scene.models[0].mMeshes.push_back(NewMeshID);
 		scene.models[0].mName = shapes[i].name;
-		Resources::Meshes.push_back(MakeMesh(shapes[i].mesh, attributes, materials));
-		Mesh* mesh = Resources::GetMesh(NewMeshID);
-
-		//TextureID NewTextureID = (TextureID)Resources::Textures.size();
-
-		//Uniform tex;
-		//tex.Type = Uniform::TEX;
-		//tex.tex = TextureBinding{ EMISSIVE, NewTextureID };
-		//tex.Name = "uTex";
-
-		VertexBufferLayout	vbl;
-		vbl.Push<float>(3);
-		vbl.Push<float>(3);
-		vbl.Push<float>(2);
-		mesh->mVertexArray.AddBuffer(mesh->mVertexBuffer, vbl);
+		LoadMesh(shapes[i].mesh, attributes, scene.models[0]);
 	}
+	MaterialLoader.join();
+
+	// undo the base path change
+	std::swap(OldPath, Resources::BaseFilepath);
+	Resources::FlushTextureData();
 }
 
 void ShaderPixel::deinit()

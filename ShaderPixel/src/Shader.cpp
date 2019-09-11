@@ -1,6 +1,6 @@
 #include "Shader.h"
 #include "Renderer.h"
-#include "Wrapper.h"
+#include "Utility.h"
 #include "Resources.h"
 
 #include <string>
@@ -8,47 +8,66 @@
 #include <iostream>
 #include <glad/glad.h>
 
-static std::map<std::string, int> sShaderCache;
 static unsigned int sCurrentlyBound = 0;
 
-inline static std::string GetShaderSource(const std::string& Filepath)
+static std::map<std::string, int> sShaderCache;
+
+static std::map<FeatureMask, ShaderID> sPermutations;
+
+static std::string GetShaderSource(const std::string& Filepath, const std::string& Modifier)
 {
 	// temporary string for holding line from file
 	std::string tmp;
 
 	std::ifstream ShaderFile(Filepath);
 	std::string ShaderSource;
+
+	if (!std::getline(ShaderFile, tmp))
+		std::cerr << "Problems reading shader from: " << Filepath << '\n';
+
+	ShaderSource += tmp + "\n" + Modifier;
+
 	while (std::getline(ShaderFile, tmp))
 		ShaderSource += tmp + "\n";
 
 	return ShaderSource;
 }
 
-inline static int CompileShader(unsigned int Type, const std::string& Filepath)
+static int CompileShader(unsigned int Type, const std::string& Filepath, const std::string& Modifier)
 {
 	std::cerr << Filepath << " is compiling\n";
-	const std::string ShaderSourceTmp = GetShaderSource(Filepath);
-	GLCall(unsigned int Shader = glCreateShader(Type));
+	const std::string ShaderSourceTmp = GetShaderSource(Filepath, Modifier);
+	GLCall(unsigned int ShaderProgram = glCreateShader(Type));
 	const char *str = ShaderSourceTmp.c_str();
-	GLCall(glShaderSource(Shader, 1, &str, 0));
-	GLCall(glCompileShader(Shader));
+	GLCall(glShaderSource(ShaderProgram, 1, &str, 0));
+	GLCall(glCompileShader(ShaderProgram));
 
 	int result;
-	GLCall(glGetShaderiv(Shader, GL_COMPILE_STATUS, &result));
+	GLCall(glGetShaderiv(ShaderProgram, GL_COMPILE_STATUS, &result));
 	if (result == GL_FALSE)
 	{
-		GLCall(glGetShaderiv(Shader, GL_INFO_LOG_LENGTH, &result));
+		GLCall(glGetShaderiv(ShaderProgram, GL_INFO_LOG_LENGTH, &result));
 		char *message = static_cast<char *>(alloca(result));
-		GLCall(glGetShaderInfoLog(Shader, result, &result, message));
+		GLCall(glGetShaderInfoLog(ShaderProgram, result, &result, message));
 		std::cerr << "Failed to compile " << (Type == GL_FRAGMENT_SHADER ? "fragment" : "vertex") << " shader:" << message << std::endl;
-		GLCall(glDeleteShader(Shader));
+		GLCall(glDeleteShader(ShaderProgram));
 		__debugbreak();
 		return (0);
 	}
-	return Shader;
+	return ShaderProgram;
 }
 
-inline static unsigned int CreateShader(unsigned int Vs, unsigned int Fs)
+static int GetOrCompileShader(unsigned int Type, const std::string& Name, const std::string& Modifier)
+{
+//	auto FindIterator = sShaderCache.find(Name);
+//	if (FindIterator != sShaderCache.end())
+//		return FindIterator->second;
+	unsigned int Location = CompileShader(Type, Name, Modifier);
+	//sShaderCache[Name] = Location;
+	return Location;
+}
+
+static unsigned int CreateShader(unsigned int Vs, unsigned int Fs)
 {
 	GLCall(unsigned int Program = glCreateProgram());
 	GLCall(glAttachShader(Program, Vs));
@@ -71,18 +90,57 @@ inline static unsigned int CreateShader(unsigned int Vs, unsigned int Fs)
 	return Program;
 }
 
-Shader::Shader(const std::string& VertexPath /*= "../content/shaders/vertDefault.shader"*/, const std::string& FragmentPath /*= "../content/shaders/fragDefault.shader"*/)
+Shader::Shader(
+	const std::string& VertexPath,
+	const std::string& FragmentPath,
+	const std::string& Modifier /*= ""*/)
 {
-	unsigned int VertexShader = GetShaderLocation(GL_VERTEX_SHADER, VertexPath);
-	unsigned int FragmentShader = GetShaderLocation(GL_FRAGMENT_SHADER, FragmentPath);
+	unsigned int VertexShader = GetOrCompileShader(GL_VERTEX_SHADER, VertexPath, Modifier);
+	unsigned int FragmentShader = GetOrCompileShader(GL_FRAGMENT_SHADER, FragmentPath, Modifier);
 
 	mRendererID = CreateShader(VertexShader, FragmentShader);
 	Bind();
 }
 
+Shader::Shader(Shader&& Other)
+{
+	*this = std::move(Other);
+}
+
+static std::string ModifierFromMask(FeatureMask mask)
+{
+	const static std::string Modifiers[] = {
+		"#define ALPHA_TEXTURE 1\n",
+		"#define MASKED 1\n",
+		"#define DITHERED 1\n",
+	};
+
+	static_assert(ARRAY_COUNT(Modifiers) == Feature::Count);
+
+	std::string result;
+	for (int i = 0; i < ARRAY_COUNT(Modifiers); i++)
+		if ((1 << i) & mask)
+			result += Modifiers[i];
+
+	return result;
+}
+
+Shader::Shader(FeatureMask mask) : Shader(
+"../content/shaders/vertDefault.shader",
+"../content/shaders/fragDefault.shader",
+ModifierFromMask(mask))
+{ }
+
+Shader& Shader::operator=(Shader&& Other)
+{
+	mRendererID = Other.mRendererID;
+	std::swap(Other.mLocationCache, mLocationCache);
+	return *this;
+}
+
 Shader::~Shader()
 {
-	GLCall(glDeleteProgram(mRendererID));
+	//GLCall(glDeleteProgram(mRendererID));
 }
 
 void Shader::Bind() const
@@ -108,7 +166,9 @@ void Shader::SetUniform(const std::string & Name, int value)
 void Shader::SetUniform(const std::string & Name, unsigned int value)
 {
 	Bind();
-	GLCall(glUniform1ui(GetUniformLocation(Name), value));
+	GLint location = GetUniformLocation(Name);
+	if (location > 0)
+		GLCall(glUniform1ui(location, value));
 }
 
 void Shader::SetUniform(const std::string & Name, float value)
@@ -141,7 +201,6 @@ void Shader::SetUniform(const std::string & Name, const glm::vec3& value)
 	GLCall(glUniform3fv(GetUniformLocation(Name), 1, &value[0]));
 }
 
-
 void Shader::SetUniform(const std::string & Name, const glm::vec4& value)
 {
 	Bind();
@@ -168,34 +227,47 @@ void Shader::SetUniform(const std::string & Name, const glm::mat4& Value)
 
 void Shader::SetUniform(const Uniform& Uniform)
 {
-	switch (Uniform.Type)
+	switch (Uniform.type)
 	{
-	case Uniform::FLOAT: {
-		SetUniform(Uniform.Name, Uniform.scalar);
+	case UniformType::FLOAT: {
+		SetUniform(Uniform.name, Uniform.scalar);
+		break;
 	}
-	case Uniform::VEC2: {
-		SetUniform(Uniform.Name, Uniform.v2);
+	case UniformType::VEC2: {
+		SetUniform(Uniform.name, Uniform.v2);
+		break;
 	}
-	case Uniform::VEC3: {
-		SetUniform(Uniform.Name, Uniform.v3);
+	case UniformType::VEC3: {
+		SetUniform(Uniform.name, Uniform.v3);
+		break;
 	}
-	case Uniform::VEC4: {
-		SetUniform(Uniform.Name, Uniform.v4);
+	case UniformType::VEC4: {
+		SetUniform(Uniform.name, Uniform.v4);
+		break;
 	}
-	case Uniform::IVEC2: {
-		SetUniform(Uniform.Name, Uniform.iv2);
+	case UniformType::IVEC2: {
+		SetUniform(Uniform.name, Uniform.iv2);
+		break;
 	}
-	case Uniform::IVEC3: {
-		SetUniform(Uniform.Name, Uniform.iv3);
+	case UniformType::IVEC3: {
+		SetUniform(Uniform.name, Uniform.iv3);
+		break;
 	}
-	case Uniform::IVEC4: {
-		SetUniform(Uniform.Name, Uniform.iv4);
+	case UniformType::IVEC4: {
+		SetUniform(Uniform.name, Uniform.iv4);
+		break;
 	}
-	case Uniform::TEX: {
+	case UniformType::TEX: {
 		TextureBinding texBinding = Uniform.tex;
 		Texture *tex = Resources::GetTexture(texBinding.id);
 		tex->Bind(texBinding.usage);
-		SetUniform(Uniform.Name, texBinding.usage);
+		SetUniform(Uniform.name, (GLint)texBinding.usage);
+		break;
+	}
+	case UniformType::CODE: {
+		CustomCode code = Uniform.code;
+		if (code.callback)
+			code.callback(this, code.payload);
 	}
 	default:
 		break;
@@ -220,24 +292,27 @@ void Shader::SetUniform(const std::string& Name, const glm::ivec4& value)
 	GLCall(glUniform4iv(GetUniformLocation(Name), 1, &value[0]));
 }
 
+ShaderID Shader::GetShaderWithFeatures(FeatureMask mask)
+{
+	auto It = sPermutations.find(mask);
+	if (It != sPermutations.end())
+		return It->second;
+
+	ShaderID shaderID = Resources::Shaders.size();
+	Resources::Shaders.emplace_back(mask);
+	sPermutations[mask] = shaderID;
+	return shaderID;
+}
+
 int Shader::GetUniformLocation(const std::string & Name)
 {
-	auto FindIterator = LocationCache.find(Name);
-	if (FindIterator != LocationCache.end())
+	auto FindIterator = mLocationCache.find(Name);
+	if (FindIterator != mLocationCache.end())
 		return FindIterator->second;
 	GLCall(int Location = glGetUniformLocation(mRendererID, Name.c_str()));
-	LocationCache[Name] = Location;
+	mLocationCache[Name] = Location;
 	if (Location == -1)
 		std::cerr << Name << " wasn't found as a uniform\n";
 	return Location;
 }
 
-int Shader::GetShaderLocation(unsigned int Type, const std::string & Name)
-{
-	auto FindIterator = sShaderCache.find(Name);
-	if (FindIterator != sShaderCache.end())
-		return FindIterator->second;
-	unsigned int Location = CompileShader(Type, Name);
-	sShaderCache[Name] = Location;
-	return Location;
-}

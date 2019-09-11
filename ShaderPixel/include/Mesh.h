@@ -13,16 +13,19 @@ struct Vertex
 	glm::vec2	UV;
 };
 
-typedef uint32_t MeshID;
+typedef size_t MeshID;
 struct Mesh
 {
-    VertexBuffer		mVertexBuffer;
+    VertexBuffer		vertexBuffer;
     //IndexBuffer			mIndexBuffer;
-    VertexArray			mVertexArray;
-    Material            mMaterial;
-	unsigned int		mCount = 0; // if zero then it's indexed so use IndexBuffer
+    VertexArray			vertexArray;
+    MaterialID          materialID;
+	unsigned int		count = 0; // if zero then it's indexed so use IndexBuffer
 };
 
-Mesh MakeMesh(	const tinyobj::mesh_t& mesh,
+struct Model;
+
+void LoadMesh(	const tinyobj::mesh_t& mesh,
 				const tinyobj::attrib_t& attributes,
-				const std::vector<tinyobj::material_t> materials);
+				Model& model
+);

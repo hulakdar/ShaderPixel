@@ -5,6 +5,25 @@
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 
+typedef void (*Callback)(class Shader*, void*);
+struct CustomCode
+{
+	Callback	callback;
+	void		*payload;
+};
+
+enum class UniformType : uint8_t {
+	FLOAT,
+	VEC2,
+	VEC3,
+	VEC4,
+	IVEC2,
+	IVEC3,
+	IVEC4,
+	TEX,
+	CODE,
+};
+
 struct Uniform
 {
 	union {
@@ -16,16 +35,8 @@ struct Uniform
 		glm::ivec3		iv3;
 		glm::ivec4		iv4;
 		TextureBinding	tex;
+		CustomCode		code;
 	};
-	enum {
-		FLOAT,
-		VEC2,
-		VEC3,
-		VEC4,
-		IVEC2,
-		IVEC3,
-		IVEC4,
-		TEX,
-	} Type;
-	std::string Name;
+	std::string name;
+	UniformType type;
 };

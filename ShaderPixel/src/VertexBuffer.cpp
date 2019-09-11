@@ -1,5 +1,5 @@
 #include "VertexBuffer.h"
-#include "Wrapper.h"
+#include "Utility.h"
 
 #include <glad/glad.h>
 #include <algorithm>

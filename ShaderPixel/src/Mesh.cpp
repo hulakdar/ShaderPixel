@@ -1,5 +1,8 @@
 #include "Mesh.h"
+#include "Model.h"
+
 #include <assert.h>
+#include "Resources.h"
 
 Vertex	MakeVertex(const tinyobj::mesh_t& mesh, const tinyobj::attrib_t& attributes, size_t scrubber)
 {
@@ -14,34 +17,51 @@ Vertex	MakeVertex(const tinyobj::mesh_t& mesh, const tinyobj::attrib_t& attribut
 	return tmp;
 }
 
-Mesh	MakeMesh(	const tinyobj::mesh_t& mesh,
+void	LoadMesh(	const tinyobj::mesh_t& mesh,
 					const tinyobj::attrib_t& attributes,
-					const std::vector<tinyobj::material_t> materials)
+					Model& model)
 {
-	std::vector<Vertex>			vertexData;
+	std::map<int, std::vector<Vertex>> submeshes;
 
 	size_t scrubber = 0;
-	for (unsigned char num : mesh.num_face_vertices)
+	for (size_t i = 0; i < mesh.num_face_vertices.size(); i++)
 	{
-		unsigned char count = num;
+		unsigned char	num = mesh.num_face_vertices[i];
+		MaterialID		matID = mesh.material_ids[i];
+
+		std::vector<Vertex>&		vertexData = submeshes[matID];
 
 		vertexData.push_back(MakeVertex(mesh, attributes, scrubber + 0));
 		vertexData.push_back(MakeVertex(mesh, attributes, scrubber + 1));
 		vertexData.push_back(MakeVertex(mesh, attributes, scrubber + 2));
 
-		while (count > 3)
+		for (unsigned char count = num; count > 3; --count)
 		{
 			vertexData.push_back(MakeVertex(mesh, attributes, scrubber + count - 4));
 			vertexData.push_back(MakeVertex(mesh, attributes, scrubber + count - 2));
 			vertexData.push_back(MakeVertex(mesh, attributes, scrubber + count - 1));
-			count--;
 		}
 		scrubber += num;
 	}
-	return Mesh {
-		VertexBuffer(vertexData),
-		VertexArray(),
-		Material(),
-		(unsigned int)vertexData.size()
-	};
+
+	for (auto It : submeshes)
+	{
+		MeshID NewMeshID = (MeshID)Resources::Meshes.size();
+		model.mMeshes.push_back(NewMeshID);
+		MaterialID					matID = It.first;
+		std::vector<Vertex>&   vertexData = It.second;
+		Resources::Meshes.push_back({
+			VertexBuffer(vertexData),
+			VertexArray(),
+			matID,
+			(unsigned int)vertexData.size()
+		});
+		Mesh* mesh = Resources::GetMesh(NewMeshID);
+
+		VertexBufferLayout	vbl;
+		vbl.Push<float>(3);
+		vbl.Push<float>(3);
+		vbl.Push<float>(2);
+		mesh->vertexArray.AddBuffer(mesh->vertexBuffer, vbl);
+	}
 }

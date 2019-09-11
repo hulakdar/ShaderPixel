@@ -1,6 +1,6 @@
 #include "IndexBuffer.h"
 #include "Renderer.h"
-#include "Wrapper.h"
+#include "Utility.h"
 
 #include <glad/glad.h>
 #include <algorithm>

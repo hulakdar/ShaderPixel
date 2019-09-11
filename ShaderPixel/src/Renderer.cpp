@@ -3,28 +3,34 @@
 #include "IndexBuffer.h"
 #include "Shader.h"
 #include "ShaderPixel.h"
-#include "Wrapper.h"
+#include "Utility.h"
 #include "Resources.h"
+#include "stb_image.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <iostream>
+#include <algorithm>
 
 namespace Renderer
 {
 	void Init()
 	{
 		GLCall(glEnable(GL_DEPTH_TEST));
+		stbi_set_flip_vertically_on_load(true);
+		//glEnable(GL_MULTISAMPLE); need?
 
-		//GLCall(glEnable(GL_BLEND));
-		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+		assert(Resources::Shaders.size() == 0);
+		assert(Resources::Textures.size() == 0);
+		Resources::Shaders.emplace_back(0); // default shader
+		Resources::Textures.emplace_back();// default texture
 	}
 
-	void ApplyMaterial(Material& material, Shader& shader)
+	void ApplyMaterial(Material* material, Shader* shader)
 	{
-		for (auto& It : material.mUniforms)
+		for (auto& It : material->uniforms)
 		{
-			shader.SetUniform(It);
+			shader->SetUniform(It);
 		}
 	}
 
@@ -33,7 +39,7 @@ namespace Renderer
 		GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	}
 
-	void Draw(Scene& scene, Shader& shader, glm::mat4 viewProjection)
+	void Draw(Scene& scene, Shader* inputShader, glm::mat4 viewProjection)
 	{
 		for (auto& model : scene.models)
 		{
@@ -41,18 +47,45 @@ namespace Renderer
 			for (auto& meshID : model.mMeshes)
 			{
 				Mesh* mesh = Resources::GetMesh(meshID);
-				ApplyMaterial(mesh->mMaterial, shader);
-				shader.SetUniform("uMVP", MVP);
-				shader.SetUniform("uTime", (float)glfwGetTime());
-				Draw(mesh);
+				Material* material = Resources::GetMaterial(mesh->materialID);
+				if (material)
+				{
+					if (material->blendMode == BlendMode::Opaque)
+					{
+						glEnable(GL_CULL_FACE);
+						glCullFace(GL_BACK);
+					}
+					else
+					{
+						glDisable(GL_CULL_FACE);
+					}
+
+
+					Shader* currentShader = inputShader;
+
+					// cache this? sort by this?
+					if (material->shaderOverride)
+						currentShader = Resources::GetShader(material->shaderOverride);
+
+					// just in case.  this should never trigger
+					if (!currentShader)
+						currentShader = inputShader;
+
+					if (currentShader)
+					{
+						ApplyMaterial(material, currentShader);
+						currentShader->SetUniform("uMVP", MVP);
+						Draw(mesh);
+					}
+				}
 			}
 		}
 	}
 
 	void Draw(Mesh* mesh)
 	{
-		if (mesh->mCount)
-			Draw(mesh->mVertexArray, mesh->mCount);
+		if (mesh->count)
+			Draw(mesh->vertexArray, mesh->count);
 		else
 			;//Draw(mesh->mVertexArray, mesh->mIndexBuffer);
 	}

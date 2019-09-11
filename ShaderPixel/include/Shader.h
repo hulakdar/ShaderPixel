@@ -5,15 +5,33 @@
 #include <map>
 #include "Uniform.h"
 
+typedef size_t ShaderID;
+
+typedef uint8_t FeatureMask;
+enum Feature {
+	AlphaTexture = 1 << 0,
+	Masked = 1 << 1,
+	Dithered = 1 << 2,
+	Count = 3 // update by hand?? not cool :C
+};
+
 class Shader
 {
-private:
-
-	unsigned int mRendererID;
-	std::map<std::string, int> LocationCache;
+	unsigned int				mRendererID;
+	std::map<std::string, int>	mLocationCache;
 public:
-	Shader(const std::string& VertexPath = "../content/shaders/vertDefault.shader",
-		const std::string& FragmentPath = "../content/shaders/fragDefault.shader");
+	Shader(FeatureMask mask);
+	static ShaderID GetShaderWithFeatures(FeatureMask mask);
+
+	Shader(const std::string& VertexPath,
+		const std::string& FragmentPath,
+		const std::string& Modifier = "" //if you pass something here, don't forget to add  \n
+		);
+	Shader(const Shader& Other) = delete;
+	Shader& operator=(const Shader& Other) = delete;
+
+	Shader(Shader&& Other);
+	Shader& operator=(Shader&& Other);
 	~Shader();
 
 	void Bind() const ;
@@ -36,5 +54,4 @@ public:
 	void SetUniform(const std::string& Name, const glm::mat4& value);
 private:
 	int GetUniformLocation(const std::string& Name);
-	static int GetShaderLocation(unsigned int Type, const std::string& Name);
 };

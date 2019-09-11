@@ -19,6 +19,7 @@ struct Host
 
 	void	onKey(int key, int scancode, int action, int mods);
 	void	onMouseMove(float x, float y);
+	void	onScroll(float x, float y);
 	void	preframe();
 	void	update();
 	bool	shouldClose();
@@ -28,6 +29,7 @@ struct Host
 	float		 mScale;
 
 	AppMemory	*mMemory;
+	GLFWwindow		*mWindow;
 
 	// allocators for DLL
 	void	*(*allocate)(size_t);
@@ -39,7 +41,6 @@ private:
 	Application		*mApplication;
 	int				mWidth, mHeight;
 	float			mMouseX, mMouseY;
-	GLFWwindow		*mWindow;
 	bool			mForceReload;
 
 	void			updateDLL();

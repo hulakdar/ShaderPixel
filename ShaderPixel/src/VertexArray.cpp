@@ -1,7 +1,7 @@
 #include "VertexArray.h"
 #include "VertexBuffer.h"
 #include "VertexBufferLayout.h"
-#include "Wrapper.h"
+#include "Utility.h"
 #include <glad/glad.h>
 
 unsigned int VertexArray::s_CurrentlyBound = 0;

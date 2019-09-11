@@ -6,17 +6,17 @@ layout (location = 2) in vec2 vUV;
 
 out VS_OUT
 {
-    vec4 FragPos;
     vec2 TexCoord;
     vec3 Normal;
+    float VertexOffset;
 }   vs_out;
 
 uniform mat4 uMVP;
 
 void main()
 {
-	vs_out.FragPos = uMVP * vPos;
+	vs_out.VertexOffset = float(gl_VertexID);
 	vs_out.TexCoord = vUV;
 	vs_out.Normal = vNorm;
-	gl_Position = vs_out.FragPos;
+	gl_Position = uMVP * vPos;
 }

@@ -18,7 +18,12 @@ namespace { namespace Callbacks {
 	void MousePosition(GLFWwindow* window, double x, double y)
 	{
 		Host* host = Host::FromWindow(window);
-		host->onMouseMove(x, y);
+		host->onMouseMove(float(x), float(y));
+	}
+	void Scroll(GLFWwindow* window, double x, double y)
+	{
+		Host* host = Host::FromWindow(window);
+		host->onScroll(float(x), float(y));
 	}
 	void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
@@ -51,9 +56,16 @@ void Host::onMouseMove(float x, float y)
 	float deltaY = y - mMouseY;
 	mMouseX = x;
 	mMouseY = y;
-	mApplication->onMouseMove(x, y, deltaX, deltaX);
+	mApplication->onMouseMove(x, y, deltaX, deltaY);
 	//glfwSetCursorPos(mWindow, mWidth / 2, mHeight / 2);
 }
+
+void Host::onScroll(float x, float y)
+{
+	mApplication->onScroll(x, y);
+	//glfwSetCursorPos(mWindow, mWidth / 2, mHeight / 2);
+}
+
 
 void Host::preframe()
 {
@@ -82,15 +94,17 @@ Host::Host(const std::string &dllPath)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//glfwWindowHint(GLFW_SAMPLES, 4);
 	//glfwWindowHint(GLFW_FLOATING, 1); // window always on top
 
-	mWindow = glfwCreateWindow(500, 500, "ShaderPixel", nullptr, nullptr);
+	mWindow = glfwCreateWindow(700, 700, "ShaderPixel", nullptr, nullptr);
 	glfwSetWindowUserPointer(mWindow, this);
 	//glfwSetWindowOpacity(mWindow, 0.8f); // transparent window
 
 	glfwGetFramebufferSize(mWindow, &mWidth, &mHeight);
 	glfwSetKeyCallback(mWindow, Callbacks::Keyboard);
 	glfwSetCursorPosCallback(mWindow, Callbacks::MousePosition);
+	glfwSetScrollCallback(mWindow, Callbacks::Scroll);
 	glfwSetFramebufferSizeCallback(mWindow, Callbacks::FramebufferSize);
 
 	glfwMakeContextCurrent(mWindow);
