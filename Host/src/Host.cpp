@@ -97,7 +97,7 @@ Host::Host(const std::string &dllPath)
 	//glfwWindowHint(GLFW_SAMPLES, 4);
 	//glfwWindowHint(GLFW_FLOATING, 1); // window always on top
 
-	mWindow = glfwCreateWindow(700, 700, "ShaderPixel", nullptr, nullptr);
+	mWindow = glfwCreateWindow(700, 500, "ShaderPixel", nullptr, nullptr);
 	glfwSetWindowUserPointer(mWindow, this);
 	//glfwSetWindowOpacity(mWindow, 0.8f); // transparent window
 

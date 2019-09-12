@@ -6,12 +6,7 @@
 
 unsigned int VertexArray::s_CurrentlyBound = 0;
 
-VertexArray::VertexArray()
-{
-	// generating the vertex buffer
-	GLCall(glGenVertexArrays(1, &mRendererID));
-	//Bind();
-}
+VertexArray::VertexArray() { }
 
 VertexArray::VertexArray(const VertexBuffer & Vb, const VertexBufferLayout & Vbl) :
 	VertexArray()
@@ -21,7 +16,7 @@ VertexArray::VertexArray(const VertexBuffer & Vb, const VertexBufferLayout & Vbl
 
 VertexArray::~VertexArray()
 {
-	GLCall(glDeleteVertexArrays(1, &mRendererID));
+	//GLCall(glDeleteVertexArrays(1, &mRendererID));
 }
 
 VertexArray::VertexArray(VertexArray&& Other)
@@ -37,6 +32,8 @@ VertexArray& VertexArray::operator=(VertexArray&& Other)
 
 void VertexArray::AddBuffer(const VertexBuffer& Vb, const VertexBufferLayout& Layout, unsigned int attributeOffset)
 {
+	if (mRendererID == 0)
+		GLCall(glGenVertexArrays(1, &mRendererID));
 	Vb.Bind();
 	Bind();
 

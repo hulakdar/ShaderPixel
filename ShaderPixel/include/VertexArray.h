@@ -5,7 +5,7 @@ class VertexArray
 private:
 	static unsigned int s_CurrentlyBound;
 
-	unsigned int mRendererID;
+	unsigned int mRendererID = 0;
 public:
 	VertexArray();
 	VertexArray(const class VertexBuffer& Vb, const class VertexBufferLayout& Vbl);

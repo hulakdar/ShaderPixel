@@ -1,60 +1,15 @@
 #pragma once
 #include <vector>
 
-static const float cubeVertexBufferData[] =
-{
-	-0.5f, -0.5f, -0.5f, 0.0f,0.0f, 0.0f,0.0f, -1.0f,
-	 0.5f, -0.5f, -0.5f, 1.0f,0.0f, 0.0f,0.0f, -1.0f,
-	 0.5f,  0.5f, -0.5f, 1.0f,1.0f, 0.0f,0.0f, -1.0f,
-	 0.5f,  0.5f, -0.5f, 1.0f,1.0f, 0.0f,0.0f, -1.0f,
-	-0.5f,  0.5f, -0.5f, 0.0f,1.0f, 0.0f,0.0f, -1.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f,0.0f, 0.0f,0.0f, -1.0f,
-
-	-0.5f, -0.5f,  0.5f, 0.0f,0.0f, 0.0f,0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f, 1.0f,0.0f, 0.0f,0.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f, 1.0f,1.0f, 0.0f,0.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f, 1.0f,1.0f, 0.0f,0.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f, 0.0f,1.0f, 0.0f,0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f, 0.0f,0.0f, 0.0f,0.0f, 1.0f,
-
-	-0.5f,  0.5f,  0.5f, 1.0f,0.0f, -1.0f,0.0f,0.0f,
-	-0.5f,  0.5f, -0.5f, 1.0f,1.0f, -1.0f,0.0f,0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f,1.0f, -1.0f,0.0f,0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f,1.0f, -1.0f,0.0f,0.0f,
-	-0.5f, -0.5f,  0.5f, 0.0f,0.0f, -1.0f,0.0f,0.0f,
-	-0.5f,  0.5f,  0.5f, 1.0f,0.0f, -1.0f,0.0f,0.0f,
-
-	 0.5f,  0.5f,  0.5f, 1.0f,0.0f, 1.0f,0.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f, 1.0f,1.0f, 1.0f,0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f, 0.0f,1.0f, 1.0f,0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f, 0.0f,1.0f, 1.0f,0.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f, 0.0f,0.0f, 1.0f,0.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f, 1.0f,0.0f, 1.0f,0.0f, 0.0f,
-
-	-0.5f, -0.5f, -0.5f, 0.0f,1.0f, 0.0f,-1.0f,0.0f,
-	 0.5f, -0.5f, -0.5f, 1.0f,1.0f, 0.0f,-1.0f,0.0f,
-	 0.5f, -0.5f,  0.5f, 1.0f,0.0f, 0.0f,-1.0f,0.0f,
-	 0.5f, -0.5f,  0.5f, 1.0f,0.0f, 0.0f,-1.0f,0.0f,
-	-0.5f, -0.5f,  0.5f, 0.0f,0.0f, 0.0f,-1.0f,0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f,1.0f, 0.0f,-1.0f,0.0f,
-
-	-0.5f,  0.5f, -0.5f, 0.0f,1.0f, 0.0f,1.0f,0.0f,
-	 0.5f,  0.5f, -0.5f, 1.0f,1.0f, 0.0f,1.0f,0.0f,
-	 0.5f,  0.5f,  0.5f, 1.0f,0.0f, 0.0f,1.0f,0.0f,
-	 0.5f,  0.5f,  0.5f, 1.0f,0.0f, 0.0f,1.0f,0.0f,
-	-0.5f,  0.5f,  0.5f, 0.0f,0.0f, 0.0f,1.0f,0.0f,
-	-0.5f,  0.5f, -0.5f, 0.0f,1.0f, 0.0f,1.0f,0.0f
-};
-
-
 class VertexBuffer
 {
 private:
 	static unsigned int s_CurrentlyBound;
 
-	unsigned int mRendererID;
+	unsigned int mRendererID = 0;
 public:
-	VertexBuffer(const void *Data = cubeVertexBufferData, size_t Size = sizeof(cubeVertexBufferData));
+	VertexBuffer();
+	VertexBuffer(const void *Data, size_t Size);
 
 	template<typename T>
 	VertexBuffer(const std::vector<T>& Data);
@@ -67,6 +22,7 @@ public:
 
 	~VertexBuffer();
 
+	void Init(const void* Data, size_t Size);
 	void Bind(void) const ;
 	void Unbind(void) const ;
 };

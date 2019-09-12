@@ -10,27 +10,34 @@
 
 static unsigned int sCurrentlyBound = 0;
 
-static std::map<std::string, int> sShaderCache;
+static std::map<std::string, std::string> sShaderCache;
 
 static std::map<FeatureMask, ShaderID> sPermutations;
 
 static std::string GetShaderSource(const std::string& Filepath, const std::string& Modifier)
 {
+	std::string result = "#version 410\n" + Modifier;
 	// temporary string for holding line from file
-	std::string tmp;
+	auto It= sShaderCache.find(Filepath);
+	if (It != sShaderCache.end())
+	{
+		result += It->second;
+	}
+	else
+	{
+		std::string shaderSource;
+		std::string tmp;
+		std::ifstream ShaderFile(Filepath);
+		if (!ShaderFile.good())
+			std::cerr << "Problems reading shader from: " << Filepath << '\n';
+		while (std::getline(ShaderFile, tmp))
+			shaderSource += tmp + "\n";
 
-	std::ifstream ShaderFile(Filepath);
-	std::string ShaderSource;
+		sShaderCache[Filepath] = shaderSource;
 
-	if (!std::getline(ShaderFile, tmp))
-		std::cerr << "Problems reading shader from: " << Filepath << '\n';
-
-	ShaderSource += tmp + "\n" + Modifier;
-
-	while (std::getline(ShaderFile, tmp))
-		ShaderSource += tmp + "\n";
-
-	return ShaderSource;
+		result += shaderSource;
+	}
+	return result;
 }
 
 static int CompileShader(unsigned int Type, const std::string& Filepath, const std::string& Modifier)
@@ -55,16 +62,6 @@ static int CompileShader(unsigned int Type, const std::string& Filepath, const s
 		return (0);
 	}
 	return ShaderProgram;
-}
-
-static int GetOrCompileShader(unsigned int Type, const std::string& Name, const std::string& Modifier)
-{
-//	auto FindIterator = sShaderCache.find(Name);
-//	if (FindIterator != sShaderCache.end())
-//		return FindIterator->second;
-	unsigned int Location = CompileShader(Type, Name, Modifier);
-	//sShaderCache[Name] = Location;
-	return Location;
 }
 
 static unsigned int CreateShader(unsigned int Vs, unsigned int Fs)
@@ -95,8 +92,8 @@ Shader::Shader(
 	const std::string& FragmentPath,
 	const std::string& Modifier /*= ""*/)
 {
-	unsigned int VertexShader = GetOrCompileShader(GL_VERTEX_SHADER, VertexPath, Modifier);
-	unsigned int FragmentShader = GetOrCompileShader(GL_FRAGMENT_SHADER, FragmentPath, Modifier);
+	unsigned int VertexShader = CompileShader(GL_VERTEX_SHADER, VertexPath, Modifier);
+	unsigned int FragmentShader = CompileShader(GL_FRAGMENT_SHADER, FragmentPath, Modifier);
 
 	mRendererID = CreateShader(VertexShader, FragmentShader);
 	Bind();

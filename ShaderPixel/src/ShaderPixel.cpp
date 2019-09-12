@@ -4,6 +4,9 @@
 
 #include <iostream>
 #include <thread>
+
+#define _USE_MATH_DEFINES 
+#include <math.h>
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 #include <stb_image.h>
@@ -12,6 +15,7 @@
 #include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
+#include "Collision.h"
 
 Host*& staticHost()
 {
@@ -72,8 +76,6 @@ void ShaderPixel::update()
 	Host* host = staticHost();
 	AppMemory* mem = host->mMemory;
 
-	static float RunningOffset;
-
 	static float Near = 1;
 	static float Far = 90000;
 	static float uPow = 1;
@@ -89,16 +91,28 @@ void ShaderPixel::update()
 		mCameraAngles.x, glm::vec3(0, 1, 0)
 	);
 
-	glm::mat4 cameraTranslation = glm::translate(glm::mat4(1), mCameraPosition);
-	glm::mat4 mViewProjectionMatrix =
+	glm::mat4 cameraTranslation = glm::translate(glm::mat4(1), -mCameraPosition);
+	glm::mat4 viewProjection =
 		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
 		* cameraRotation * cameraTranslation;
 
-	Renderer::Draw(mem->scene, defaultShader, mViewProjectionMatrix);
-	RunningOffset += 0.01f;
+	Renderer::Draw(mem->scene, defaultShader, viewProjection);
+	
+	//Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
 
+	Shader* manbox = Resources::GetShader(mBox);
 
+	glm::vec3 boxPos{ 0,150,0 };
+	float boxScale = 1;
 
+	manbox->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
+
+	CollisionAABB boxAABB{
+		glm::vec3(-20) * boxScale,
+		glm::vec3(20) * boxScale,
+	};
+
+	Renderer::DrawCubeWS(boxPos, boxScale, manbox, viewProjection);
 
 	// camera movement 
 	{
@@ -121,13 +135,13 @@ void ShaderPixel::update()
 		if (E)
 			mCameraPosition += mCameraUp * speed;
 		if (W)
-			mCameraPosition += mCameraForward * speed;
-		if (S)
 			mCameraPosition -= mCameraForward * speed;
+		if (S)
+			mCameraPosition += mCameraForward * speed;
 		if (A)
-			mCameraPosition += mCameraRight * speed;
-		if (D)
 			mCameraPosition -= mCameraRight * speed;
+		if (D)
+			mCameraPosition += mCameraRight * speed;
 
 
 		bool UP		= glfwGetKey(host->mWindow, GLFW_KEY_UP)	== GLFW_PRESS;
@@ -143,6 +157,14 @@ void ShaderPixel::update()
 			mCameraAngles.y += 0.1f;
 		if (UP)
 			mCameraAngles.y -= 0.1f;
+
+		if (mCameraAngles.x > 2 * M_PI)
+			mCameraAngles.x -= float(2 * M_PI);
+
+		if (mCameraAngles.x <= -2 * M_PI)
+			mCameraAngles.x += float(2 * M_PI);
+
+		mCameraAngles.y = glm::clamp(mCameraAngles.y, -float(M_PI_2), float(M_PI_2));
 	}
 }
 
@@ -226,9 +248,9 @@ Uniform PushTexture(const std::string& filename, TextureUsage usage)
 	return tmp;
 }
 
-void LoadMaterials(const std::vector<tinyobj::material_t>& materials)
+void LoadMaterials(const std::vector<tinyobj::material_t>* materials)
 {
-	for (auto& It : materials)
+	for (auto& It : *materials)
 	{
 		MaterialID currentID = (MaterialID)Resources::Materials.size();
 		Resources::Materials.emplace_back();
@@ -303,16 +325,16 @@ void ShaderPixel::init(Host* host)
 //IM_ASSERT(font != NULL);
 	Renderer::Init();
 	assert(Resources::Textures.size() == 1);
-	Resources::Textures.emplace_back("../content/BlueNoise64.tga");
+	//Resources::Textures.emplace_back("../content/BlueNoise64.tga");
 
 	// hack. need to figure out async shader compilation
 	Shader::GetShaderWithFeatures(7);
 
-	mFXAA = Resources::Shaders.size();
-	Resources::Shaders.emplace_back(
-	"../content/shaders/vertFXAA.shader",
-	"../content/shaders/fragFXAA.shader");
-	
+		mBox = Resources::Shaders.size();
+		Resources::Shaders.emplace_back(
+		"../content/shaders/vertWorldSpace.shader",
+		"../content/shaders/fragMandelbox.shader");
+
 	Scene &scene = host->mMemory->scene;
 
 	tinyobj::ObjReader objReader;
@@ -329,7 +351,7 @@ void ShaderPixel::init(Host* host)
 	auto& attributes = objReader.GetAttrib();
 	auto& materials = objReader.GetMaterials();
 
-	std::thread MaterialLoader(&LoadMaterials, materials);
+	std::thread MaterialLoader(&LoadMaterials, &materials);
 	//LoadMaterials(materials);
 
 	scene.models.emplace_back();

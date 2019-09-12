@@ -1,4 +1,3 @@
-#version 410
 
 #define DITHER_16 1
 

@@ -1,20 +1,8 @@
 
-in vec3 color;
 out vec4 fragColor;
 
 // Created by inigo quilez - iq/2013
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
-
-// A port of my 2007 demo Kindernoiser: https://www.youtube.com/watch?v=9AX8gNyrSWc (http://www.pouet.net/prod.php?which=32549)
-//
-// More (oudated, half broken) info here:  http://iquilezles.org/www/articles/juliasets3d/juliasets3d.htm
-
-
-// antialias level (1, 2, 3...)
-#define AA 1
-
-// undefine this to use numerical normals (central differences)
-#define ANALYTIC
 
 vec4 qsqr( in vec4 a ) // square a quaterion
 {
@@ -51,32 +39,6 @@ float map( in vec3 p, out vec4 oTrap, in vec4 c )
     return 0.25*sqrt(mz2/md2)*log(mz2);  // d = 0.5·|z|·log|z| / |dz|
 }
 
-#ifdef ANALYTIC
-// analytic normal
-vec3 calcNormal( in vec3 p, in vec4 c )
-{
-    vec4 z = vec4(p,0.0);
-
-    mat4x4 J = mat4x4(1,0,0,0,  // identity
-                      0,1,0,0,  
-                      0,0,1,0,  
-                      0,0,0,1 );
-
-  	for(int i=0; i<numIterations; i++)
-    {
-        J = J*mat4x4(z.x, -z.y, -z.z, -z.w, // chain rule of jacobians (removed the 2 factor)
-                     z.y,  z.x,  0.0,  0.0,
-                     z.z,  0.0,  z.x,  0.0, 
-                     z.w,  0.0,  0.0,  z.x);
-
-        z = qsqr(z) + c; // z -> z2 + c
-        
-        if(dot(z,z)>4.0) break;
-    }
-
-    return normalize( (J*z).xyz );
-}
-#else
 // numerical method
 vec3 calcNormal( in vec3 pos, in vec4 c )
 {
@@ -192,7 +154,6 @@ vec3 render( in vec3 ro, in vec3 rd, in vec4 c )
 
 vec3 mainImage( vec2 fragCoord )
 {
-	return (fragCoord.xy / 500);
     // anim
     float time = 1*.15; //float time = iTime*.15;
     vec4 c = 0.45*cos( vec4(0.5,3.9,1.4,1.1) + time*vec4(1.2,1.7,1.3,2.5) ) - vec4(0.3,0.0,0.0,0.0);
@@ -208,20 +169,15 @@ vec3 mainImage( vec2 fragCoord )
     
     // render
     vec3 col = vec3(0.0);
-    for( int j=0; j<AA; j++ )
-    for( int i=0; i<AA; i++ )
-    {
-        vec2 p = (-iResolution.xy + 2.0*(fragCoord + vec2(float(i),float(j))/float(AA))) / iResolution.y;
+    vec2 p = (-iResolution.xy + 2.0*(fragCoord) / iResolution.y;
 
-        vec3 cw = normalize(ta-ro);
-        vec3 cp = vec3(sin(cr), cos(cr),0.0);
-        vec3 cu = normalize(cross(cw,cp));
-        vec3 cv = normalize(cross(cu,cw));
-        vec3 rd = normalize( p.x*cu + p.y*cv + 2.0*cw );
+    vec3 cw = normalize(ta-ro);
+    vec3 cp = vec3(sin(cr), cos(cr),0.0);
+    vec3 cu = normalize(cross(cw,cp));
+    vec3 cv = normalize(cross(cu,cw));
+    vec3 rd = normalize( p.x*cu + p.y*cv + 2.0*cw );
 
-        col += render( ro, rd, c );
-    }
-    col /= float(AA*AA);
+    col += render( ro, rd, c );
     
     vec2 uv = fragCoord.xy / iResolution.xy;
 	col *= 0.7 + 0.3*pow(16.0*uv.x*uv.y*(1.0-uv.x)*(1.0-uv.y),0.25);

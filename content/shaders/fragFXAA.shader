@@ -1,4 +1,3 @@
-#version 410
 
 uniform sampler2D Input; // 0
 uniform vec2 rcpFrame;
