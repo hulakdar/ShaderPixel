@@ -189,8 +189,8 @@ void ShaderPixel::onScroll(float x, float y)
 {
 	(void)x;
 
-	mSpeed += y;
-	mSpeed = glm::clamp(mSpeed, 0.f, 20.f);
+	mSpeed += y * 0.01f;
+	mSpeed = glm::clamp(mSpeed, 0.001f, 20.f);
 }
 
 void ShaderPixel::onKey(int key, int scancode, int action, int mods)

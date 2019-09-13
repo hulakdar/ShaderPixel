@@ -16,8 +16,7 @@ uniform sampler2D uAlpha;
 
 #if DITHER_16
 // bytes packed in uint fo less cache misses
-const uint ArrayBlueNoiseA16x16[] =
-{
+const uint ArrayBlueNoiseA16x16[64] = uint[](
 	0x3083e0fc, 0x449303da, 0x8010e831, 0x17d6ee5d, // 0
 	0x486e593a, 0xa4cf26b5, 0xdca9661a, 0x954fc534, // 1
 	0x11ca21ba, 0xf0547de9, 0x2091c188, 0x7c2c9e6f, // 2
@@ -33,16 +32,16 @@ const uint ArrayBlueNoiseA16x16[] =
 	0x37b20c5a, 0x2fc80ee6, 0xadc7674d, 0x803454d9, // 12
 	0x65d098ec, 0x23d89e7a, 0x133e85e2, 0xcb1ff790, // 13
 	0xf34e2875, 0xaf6c4019, 0x29f29c08, 0x41bda56e, // 14
-	0xc3a407ad, 0xbefb5c8c, 0xb6cf5676, 0x64880246, // 15
-};
+	0xc3a407ad, 0xbefb5c8c, 0xb6cf5676, 0x64880246 // 15
+);
 #endif
 
-const float limits[16] = {
+const float limits[16] = float[](
 	0.0625, 0.5625, 0.1875, 0.6875,
 	0.8125, 0.3125, 0.9375, 0.4375,
 	0.25,	0.75,	0.125,	0.625,
 	0.9999,	0.5,	0.875,	0.375
-};
+);
 
 bool ditheredAlphaTest(float opacity)
 {

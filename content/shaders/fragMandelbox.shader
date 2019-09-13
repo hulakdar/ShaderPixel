@@ -9,21 +9,23 @@ in vec3 PositionMS;
 in vec3 RayDirMS;
 out vec4 FragColor;
 
+uniform unsigned int uEstimatorIterations = 45;
+
 float DistanceEstimator(vec3 position)
 {
-    // The running derivative is z.w
-    vec4 z = vec4(position, 1.0);
-    vec4 c = z;
-    for (int i = 0; i < 24; i++) {
-        // Boxfold
-        z.xyz = clamp(z.xyz, -BOX_FOLD, BOX_FOLD) * 2.0 - z.xyz;
-        // Spherefold
-        float zDot = dot(z.xyz, z.xyz);
-        if (zDot < MIN_RADIUS) z *= LINEAR_SCALE;
-        else if (zDot < FIXED_RADIUS) z *= FIXED_RADIUS / zDot;
-        z = SCALE * z + c;
-    }
-    return length(z.xyz) / abs(z.w);
+	// The running derivative is z.w
+	vec4 z = vec4(position, 1.0);
+	vec4 c = z;
+	for (int i = 0; i < uEstimatorIterations; i++) {
+		// Boxfold
+		z.xyz = clamp(z.xyz, -BOX_FOLD, BOX_FOLD) * 2.0 - z.xyz;
+		// Spherefold
+		float zDot = dot(z.xyz, z.xyz);
+		if (zDot < MIN_RADIUS) z *= LINEAR_SCALE;
+		else if (zDot < FIXED_RADIUS) z *= FIXED_RADIUS / zDot;
+		z = SCALE * z + c;
+	}
+	return length(z.xyz) / abs(z.w);
 }
 
 const float Bailout = 8.f;
@@ -55,30 +57,30 @@ float DistanceEstimatorBulb(vec3 pos) {
 	return 0.5*log(r)*r/dr;
 }
 
-const int MaxRaySteps = 20;
-const float MinimumDistance = 0.05;
+uniform unsigned int uMaxRaySteps = 60;
+const float uMinimumDistance = 0.001;
 
 float trace(vec3 from, vec3 direction)
 {
 	float totalDistance = 0.0;
-    int steps;
-	for (steps=0; steps < MaxRaySteps; steps++) {
+	unsigned int steps;
+	for (steps=0; steps < uMaxRaySteps; steps++) {
 		vec3 p = from + totalDistance * direction;
 		float distance = DistanceEstimator(p);
 		totalDistance += distance;
-		if (distance < MinimumDistance)
-            break;
-        //if (totalDistance > 20.f)
-            //discard;
+		if (distance < uMinimumDistance)
+			break;
+		//if (totalDistance > 20.f)
+		//discard;
 	}
-    return 1.0-float(steps)/float(MaxRaySteps);
+	return 1/totalDistance;
 }
 
 void main()
 {
-    vec3 start = PositionMS;
-    vec3 dir = normalize(RayDirMS);
+	vec3 start = PositionMS;
+	vec3 dir = normalize(RayDirMS);
 
-    float tmp = trace(start, dir);
-    FragColor = vec4(tmp, tmp, tmp, 1);
+	float tmp = trace(start, dir);
+	FragColor = vec4(tmp, tmp, tmp, 1);
 }
