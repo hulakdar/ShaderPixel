@@ -12,7 +12,7 @@ out vec2 UV;
 void main()
 {
 	gl_Position = uMVP * vPos;
-    RayDirMS = vPos.xyz - uCamPosMS;
+    RayDirMS = uCamPosMS - vPos.xyz;
     //PositionMS = vPos.xyz;
     PositionMS = uCamPosMS;
 

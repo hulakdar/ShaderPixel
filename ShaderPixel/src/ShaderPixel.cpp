@@ -96,23 +96,53 @@ void ShaderPixel::update()
 		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
 		* cameraRotation * cameraTranslation;
 
+	// scene
 	Renderer::Draw(mem->scene, defaultShader, viewProjection);
 	
-	//Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
+	if (0)
+		Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
 
-	Shader* manbox = Resources::GetShader(mBox);
+	// Mandelbox
+	if (0)
+	{
+		Shader* manbox = Resources::GetShader(mBox);
 
-	glm::vec3 boxPos{ 0,150,0 };
-	float boxScale = 1;
+		glm::vec3 boxPos{ 0,150,0 };
+		float boxScale = 1;
 
-	manbox->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
+		manbox->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
 
-	CollisionAABB boxAABB{
-		glm::vec3(-20) * boxScale,
-		glm::vec3(20) * boxScale,
-	};
+		Renderer::DrawCubeWS(boxPos, boxScale, manbox, viewProjection);
+	}
 
-	Renderer::DrawCubeWS(boxPos, boxScale, manbox, viewProjection);
+	// cloud
+	if (1)
+	{
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(false);
+
+		//glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+
+		Shader* cloud = Resources::GetShader(mCloud);
+
+		glm::vec3 boxPos{ 0,150,0 };
+		float boxScale = 1;
+
+		Texture* CloudTexture = Resources::GetTexture(Texture::Cloud);
+		CloudTexture->Bind();
+		cloud->SetUniform("uVolume", (GLint)0);
+		cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
+
+		Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
+		glDepthMask(true);
+		glEnable(GL_DEPTH_TEST);
+		glCullFace(GL_BACK);
+		//glDisable(GL_BLEND);
+	}
 
 	// camera movement 
 	{
@@ -198,14 +228,14 @@ void ShaderPixel::onKey(int key, int scancode, int action, int mods)
 	ImGui::Text("%d %d %d %d", key, scancode, action, mods);
 }
 
-TextureData	LoadTextureData(const std::string& filename)
+TextureData	LoadTextureData(const std::string& filename, int desiredComponentCount = 0)
 {
 	uint8_t		*LocalBuffer;
 	glm::ivec2	Size;
 	int			ComponentCount;
 
 	std::string CompleteFilepath = Resources::BaseFilepath + filename;
-	LocalBuffer = stbi_load(CompleteFilepath.c_str(), &Size.x, &Size.y, &ComponentCount, 0);
+	LocalBuffer = stbi_load(CompleteFilepath.c_str(), &Size.x, &Size.y, &ComponentCount, desiredComponentCount);
 	if (!LocalBuffer)
 		__debugbreak();
 	return { LocalBuffer, Size, ComponentCount };
@@ -323,17 +353,30 @@ void ShaderPixel::init(Host* host)
 //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
 //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 //IM_ASSERT(font != NULL);
+
 	Renderer::Init();
 	assert(Resources::Textures.size() == 1);
-	//Resources::Textures.emplace_back("../content/BlueNoise64.tga");
+	stbi_set_flip_vertically_on_load(false);
+	TextureData CloudTexture = LoadTextureData("../content/VolumeCloud.tga", 1);
+	stbi_set_flip_vertically_on_load(true);
+	CloudTexture.Slices = 12;
+	CloudTexture.Type = GL_TEXTURE_3D;
+	Resources::Textures.emplace_back(CloudTexture);
 
-	// hack. need to figure out async shader compilation
+	// hack. need to figure out async shader compilation (look at how Textures are loaded. should be pretty similar)
 	Shader::GetShaderWithFeatures(7);
+	// hack.
 
-		mBox = Resources::Shaders.size();
-		Resources::Shaders.emplace_back(
-		"../content/shaders/vertWorldSpace.shader",
-		"../content/shaders/fragMandelbox.shader");
+
+	mBox = Resources::Shaders.size();
+	Resources::Shaders.emplace_back(
+	"../content/shaders/vertWorldSpace.shader",
+	"../content/shaders/fragMandelbox.shader");
+
+	mCloud = Resources::Shaders.size();
+	Resources::Shaders.emplace_back(
+	"../content/shaders/vertWorldSpace.shader",
+	"../content/shaders/fragCloud.shader");
 
 	Scene &scene = host->mMemory->scene;
 

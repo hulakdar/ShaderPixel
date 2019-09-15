@@ -9,7 +9,7 @@ in vec3 PositionMS;
 in vec3 RayDirMS;
 out vec4 FragColor;
 
-uniform unsigned int uEstimatorIterations = 45;
+const uint uEstimatorIterations = 32;
 
 float DistanceEstimator(vec3 position)
 {
@@ -21,8 +21,15 @@ float DistanceEstimator(vec3 position)
 		z.xyz = clamp(z.xyz, -BOX_FOLD, BOX_FOLD) * 2.0 - z.xyz;
 		// Spherefold
 		float zDot = dot(z.xyz, z.xyz);
+
+		/* replaced these if's by math. not sure if this is optimal */
 		if (zDot < MIN_RADIUS) z *= LINEAR_SCALE;
 		else if (zDot < FIXED_RADIUS) z *= FIXED_RADIUS / zDot;
+		float firstCondition 	= step(MIN_RADIUS, zDot);
+		float secondCondition	= step(FIXED_RADIUS, zDot);
+		float lessImportant		= mix(secondCondition, 1.f, FIXED_RADIUS / zDot);
+		float result			= mix(firstCondition, lessImportant, LINEAR_SCALE);
+	//	z *= result;
 		z = SCALE * z + c;
 	}
 	return length(z.xyz) / abs(z.w);
@@ -57,13 +64,13 @@ float DistanceEstimatorBulb(vec3 pos) {
 	return 0.5*log(r)*r/dr;
 }
 
-uniform unsigned int uMaxRaySteps = 60;
-const float uMinimumDistance = 0.001;
+const uint uMaxRaySteps = 32;
+const float uMinimumDistance = 0.0001;
 
 float trace(vec3 from, vec3 direction)
 {
 	float totalDistance = 0.0;
-	unsigned int steps;
+	uint steps;
 	for (steps=0; steps < uMaxRaySteps; steps++) {
 		vec3 p = from + totalDistance * direction;
 		float distance = DistanceEstimator(p);
@@ -73,14 +80,16 @@ float trace(vec3 from, vec3 direction)
 		//if (totalDistance > 20.f)
 		//discard;
 	}
-	return 1/totalDistance;
+	return 1.f - float(steps)/uMaxRaySteps;
 }
 
 void main()
 {
 	vec3 start = PositionMS;
-	vec3 dir = normalize(RayDirMS);
+	vec3 dir = normalize(-RayDirMS);
 
-	float tmp = trace(start, dir);
+	float k = trace(start, dir);
+
+	float tmp = pow(k, 0.4545);
 	FragColor = vec4(tmp, tmp, tmp, 1);
 }

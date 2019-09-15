@@ -23,6 +23,7 @@ public:
 	virtual ~ShaderPixel();
 private:
 	ShaderID	mBox;
+	ShaderID	mCloud;
 
 	float		mAspectRatio = 1.f;
 	float		mSpeed = 1.f;

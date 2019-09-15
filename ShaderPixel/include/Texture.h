@@ -25,6 +25,8 @@ struct TextureData
 	uint8_t		*Buffer;
 	glm::ivec2	Size;
 	int			ComponentCount;
+	int			Slices = 1;
+	GLuint		Type = GL_TEXTURE_2D;
 };
 
 struct TextureBinding {
@@ -39,7 +41,7 @@ public:
 	enum
 	{
 		Default = 0,
-		BlueNoise = 1
+		Cloud = 1
 	};
 	
 	Texture(TextureData&);
@@ -53,7 +55,7 @@ public:
 
 	void Bind(unsigned int Slot = 0) const;
 	void Unbind() const;
-	void uploadData(uint8_t* LocalBuffer, glm::ivec2 Size, int ComponentCount);
+	void uploadData(uint8_t* LocalBuffer, glm::ivec2 Size, int ComponentCount, GLuint Type, int slices);
 
 private:
 	GLuint			mRendererID;
