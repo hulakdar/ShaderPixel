@@ -129,7 +129,7 @@ void ShaderPixel::update()
 	{
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
-
+		glDepthMask(false);
 
 		Shader* cloud = Resources::GetShader(mCloud);
 
@@ -145,6 +145,7 @@ void ShaderPixel::update()
 		Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
 		glDisable(GL_BLEND);
 		glDisable(GL_CULL_FACE);
+		glDepthMask(true);
 	}
 
 	// camera movement 
@@ -228,7 +229,7 @@ void ShaderPixel::onScroll(float x, float y)
 
 void ShaderPixel::onKey(int key, int scancode, int action, int mods)
 {
-	ImGui::Text("%d %d %d %d", key, scancode, action, mods);
+	//ImGui::Text("%d %d %d %d", key, scancode, action, mods);
 }
 
 TextureData	LoadTextureData(const std::string& filename, int desiredComponentCount = 0)

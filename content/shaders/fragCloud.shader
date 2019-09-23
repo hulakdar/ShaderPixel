@@ -1,13 +1,15 @@
 
 in vec3 FragPositionMS;
-in vec3 FragToCamDirMS;
+//in vec3 FragToCamDirMS;
 in vec2 UV;
+in vec3 Normal;
 
 uniform sampler3D   uVolume;
 uniform uint    	uStepLimit = 64;
 uniform uint    	uShadowSteps = 32;
 uniform float   	uRayStepSize = 1/64.f;
 uniform float   	uShadowThreshold = 0.3f;
+uniform vec3        uCamPosMS;
 
 vec4 NewTrace(vec3 CurPos, vec3 localcamvec, vec3 LightVector, float ShadowDensity, float Density)
 {
@@ -58,16 +60,23 @@ vec4 NewTrace(vec3 CurPos, vec3 localcamvec, vec3 LightVector, float ShadowDensi
 	return vec4(lightenergy, transmittance);
 }
 
-float trace(vec3 from, vec3 direction)
+float sampleVolume(vec3 p)
 {
-    direction *= uRayStepSize;
+    return texture(uVolume, p + 0.5f).r;
+}
+
+float trace(vec3 from, vec3 direction, float rayStepSize, float distanceLimit)
+{
+    direction *= rayStepSize;
 	float totalDistance = 0.0;
 	float Density = 0;
 	vec3 p = from;
 	for (uint i=0; i < uStepLimit; i++) {
-		Density += texture(uVolume, p).r;
+		Density += sampleVolume(p);
 		p += direction;
-		totalDistance += uRayStepSize;
+		totalDistance += rayStepSize;
+        if (totalDistance > distanceLimit)
+            break;
 	}
 	return Density / uStepLimit;
 }
@@ -77,11 +86,14 @@ out vec4 FragColor;
 void main()
 {
 	// don't forget to add view-space plane-snapping 
-	vec3 start = (FragPositionMS * 0.05f) + 0.5f;
+
+    vec3 FragToCamDirMS = uCamPosMS - FragPositionMS;
+	vec3 start = (FragPositionMS * 0.05f);
 	vec3 dir = normalize(FragToCamDirMS);
 
-	//vec3 samp = vec3(UV, uZ);
-	//float tmp = texture(uVolume, samp).r;
-	float tmp = pow(trace(start, dir), 0.4545);
-	FragColor = vec4(tmp, tmp, tmp, 1.f); //NewTrace(start, dir, normalize(vec3(1)), 1.f, 50.f);
+    float theta = dot(dir, -Normal);
+
+	float tmp = pow(trace(start, dir, uRayStepSize, length(FragToCamDirMS) * 0.05f), 0.4545);
+    tmp *= smoothstep(0.05, 0.09, theta);
+	FragColor = vec4(abs(start) * tmp, 1.f); //NewTrace(start, dir, normalize(vec3(1)), 1.f, 50.f);
 }
