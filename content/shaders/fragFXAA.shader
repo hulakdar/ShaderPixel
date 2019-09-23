@@ -1,11 +1,10 @@
 
-uniform sampler2D Input; // 0
+uniform sampler2D uInputTex; // 0
 uniform vec2 rcpFrame;
 uniform float FXAA_SPAN_MAX = 8.0;
 uniform float FXAA_REDUCE_MUL = 1.0/8.0;
 
 in vec4 FragPos;
-in vec2 FragCoord;
 out vec4 FragColor;
 
 #define FxaaInt2 ivec2
@@ -58,19 +57,19 @@ vec3 FxaaPixelShader(
         FxaaTexLod0(tex, FragPos.xy + dir * (3.0/3.0 - 0.5)).xyz);
     float lumaB = dot(rgbB, luma);
     if((lumaB < lumaMin) || (lumaB > lumaMax)) return rgbA;
-    return rgbB; }
+    return rgbB;
+}
 
-vec4 PostFX(sampler2D tex, vec2 uv, float time)
+vec4 PostFX(sampler2D tex, float time)
 {
   vec4 c = vec4(0.0);
   c.rgb = FxaaPixelShader(FragPos, tex);
-  //c.rgb = 1.0 - texture2D(tex, FragPos.xy).rgb;
+  //c.rgb = 1.0 - texture(tex, FragPos.xy).rgb;
   c.a = 1.0;
   return c;
 }
     
 void main() 
 { 
-  vec2 uv = gl_FragCoord.st * rcpFrame;
-  FragColor = PostFX(Input, uv, 0.0);
+  FragColor = PostFX(uInputTex, 0.0);
 }

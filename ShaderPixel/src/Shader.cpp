@@ -28,8 +28,16 @@ static std::string GetShaderSource(const std::string& Filepath, const std::strin
 		std::string shaderSource;
 		std::string tmp;
 		std::ifstream ShaderFile(Filepath);
-		if (!ShaderFile.good())
+		if (!ShaderFile.is_open() || ShaderFile.bad())
 			std::cerr << "Problems reading shader from: " << Filepath << '\n';
+
+		if (std::getline(ShaderFile, tmp))
+			shaderSource += tmp + "\n";
+		else
+		{
+			std::cerr << "Problems reading shader from: " << Filepath << '\n';
+		}
+
 		while (std::getline(ShaderFile, tmp))
 			shaderSource += tmp + "\n";
 
