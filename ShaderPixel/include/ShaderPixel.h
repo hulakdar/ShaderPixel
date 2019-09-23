@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "Renderer.h"
+#include "RenderTarget.h"
 
 struct AppMemory
 {
@@ -23,7 +24,11 @@ public:
 	virtual ~ShaderPixel();
 private:
 	ShaderID	mBox;
+	ShaderID	mFXAA;
 	ShaderID	mCloud;
+	ShaderID	mFullscreenTest;
+
+	RenderTarget mSceneColor;
 
 	float		mAspectRatio = 1.f;
 	float		mSpeed = 1.f;

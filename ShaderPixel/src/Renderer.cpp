@@ -17,15 +17,13 @@
 
 namespace Renderer
 {
-	static const float QuadData[] = {
-		-1.f, 1.f,	0, 1,
-		-1.f, -1.f, 0, 0,
-		
-		1.f, -1.f,	1, 0,
-		1.f, -1.f,	1, 0,
+	RenderTarget viewport;
 
-		1.f, 1.f,	1, 1,
+	static const float QuadData[] = {
+		-1.f, -1.f, 0, 0,
 		-1.f, 1.f,	0, 1,
+		1.f, -1.f,	1, 0,
+		1.f, 1.f,	1, 1,
 	};
 
 	static const float CubeData[] =
@@ -123,6 +121,11 @@ namespace Renderer
 		"../content/shaders/fragMandelbrot.shader");
 	}
 
+	void Update(int winX, int winY)
+	{
+		viewport.size = glm::ivec2(winX, winY);
+	}
+
 	void ApplyMaterial(Material* material, Shader* shader)
 	{
 		for (auto& It : material->uniforms)
@@ -200,25 +203,10 @@ namespace Renderer
 		GLCall(glDrawArrays(GL_TRIANGLES, 0, count));
 	}
 
-	void DrawInstanced(const VertexArray& va, const IndexBuffer& ib)
-	{
-		va.Bind();
-		ib.Bind();
-		std::cerr << "Instanced is not implemented yet \n";
-		//GLCall(glDrawElementsInstanced(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, 0));
-	}
-
-	void DrawInstanced(const VertexArray& va, unsigned int count)
-	{
-		va.Bind();
-		std::cerr << "Instanced is not implemented yet \n";
-		//GLCall(glDrawArraysInstanced(GL_TRIANGLES, 0, Count));
-	}
-
 	void DrawQuadFS()
 	{
 		Quad.Bind();
-		GLCall(glDrawArrays(GL_TRIANGLES, 0, ARRAY_COUNT(QuadData)));
+		GLCall(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
 	}
 
 	void DrawQuadWS(glm::vec3 Position, glm::vec2 scale, Shader* shader, glm::mat4 viewProjection)
@@ -228,7 +216,7 @@ namespace Renderer
 		glm::mat4 MVP = viewProjection * modelSpace;
 		shader->SetUniform("uMVP", MVP);
 		Quad.Bind();
-		GLCall(glDrawArrays(GL_TRIANGLES, 0, ARRAY_COUNT(QuadData)));
+		GLCall(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
 	}
 
 	void DrawCubeWS(glm::vec3 Position, float scale, Shader *shader, glm::mat4 viewProjection)

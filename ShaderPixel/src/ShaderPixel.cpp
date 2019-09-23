@@ -44,19 +44,19 @@ void operator delete(void * p)
 
 void ShaderPixel::update()
 {
-//	AppMemory* mem = getHost().mMemory;
-//	glClearColor(1, 1, 1, 1);
-//	while (glGetError())
-//		continue;
-//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//	if (auto kek = glGetError())
-//		std::cout << kek;
-//
-//
-//	mem->shaderManager.updatePrograms();
-//	defaultShader.Bind();
-//	defaultShader.Uniform("time", glfwGetTime());
+	//	AppMemory* mem = getHost().mMemory;
+	//	glClearColor(1, 1, 1, 1);
+	//	while (glGetError())
+	//		continue;
+	//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//
+	//	if (auto kek = glGetError())
+	//		std::cout << kek;
+	//
+	//
+	//	mem->shaderManager.updatePrograms();
+	//	defaultShader.Bind();
+	//	defaultShader.Uniform("time", glfwGetTime());
 
 	const glm::vec3 CubePositions[] = {
 		glm::vec3(0.0f,  0.0f,  0.0f),
@@ -80,14 +80,14 @@ void ShaderPixel::update()
 	static float Far = 90000;
 	static float uPow = 1;
 
-	Shader *defaultShader = Resources::GetShader(0);
+	Shader* defaultShader = Resources::GetShader(0);
 
 	ImGui::SliderFloat("Near", &Near, 0.1f, 3.f);
 	ImGui::SliderFloat("Far", &Far, 6.f, 90000.f);
-	
+
 	glm::mat4 cameraRotation = glm::rotate(
 		glm::rotate(glm::mat4(1),
-		mCameraAngles.y, glm::vec3(1, 0, 0)),
+			mCameraAngles.y, glm::vec3(1, 0, 0)),
 		mCameraAngles.x, glm::vec3(0, 1, 0)
 	);
 
@@ -96,9 +96,11 @@ void ShaderPixel::update()
 		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
 		* cameraRotation * cameraTranslation;
 
+	setRenderTarget(&mSceneColor);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
 	// scene
 	Renderer::Draw(mem->scene, defaultShader, viewProjection);
-	
 	if (1)
 		Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
 
@@ -147,6 +149,41 @@ void ShaderPixel::update()
 		glDisable(GL_CULL_FACE);
 		glDepthMask(true);
 	}
+
+	setRenderTarget(&Renderer::viewport);
+
+	static bool bFxaa;
+	ImGui::Checkbox("FXAA", &bFxaa);
+	if (bFxaa)
+	{
+		Shader* fxaa = Resources::GetShader(mFXAA);
+		fxaa->Bind();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, mSceneColor.textures[0]);
+		fxaa->SetUniform("uInputTex", 0);
+		fxaa->SetUniform("rcpFrame", 1.f / glm::vec2(512.f));
+
+		static float FXAA_SPAN_MAX = 8;
+		ImGui::DragFloat("FXAA_SPAN_MAX", &FXAA_SPAN_MAX, 0.1f);
+		fxaa->SetUniform("FXAA_SPAN_MAX", FXAA_SPAN_MAX);
+
+		static float FXAA_REDUCE_MUL = 0.1f;
+		ImGui::SliderFloat("FXAA_REDUCE_MUL", &FXAA_REDUCE_MUL, 0.f, 1.f);
+		fxaa->SetUniform("FXAA_REDUCE_MUL", FXAA_REDUCE_MUL);
+	}
+	else
+	{
+		Shader* passthrough = Resources::GetShader(mFullscreenTest);
+		passthrough->Bind();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, mSceneColor.textures[0]);
+		passthrough->SetUniform("uInputTex", 0);
+		passthrough->SetUniform("rcpFrame", 1.f / glm::vec2(512.f));
+	}
+
+	Renderer::DrawQuadFS();
 
 	// camera movement 
 	{
@@ -367,10 +404,12 @@ void ShaderPixel::init(Host* host)
 	CloudTexture.Type = GL_TEXTURE_3D;
 	Resources::Textures.emplace_back(CloudTexture);
 
+
 	// hack. need to figure out async shader compilation (look at how Textures are loaded. should be pretty similar)
 	Shader::GetShaderWithFeatures(7);
 	// hack.
 
+	mSceneColor = makeRenderTarget(glm::ivec2(512,512), GL_RGBA, true);
 
 	mBox = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
@@ -381,6 +420,17 @@ void ShaderPixel::init(Host* host)
 	Resources::Shaders.emplace_back(
 	"../content/shaders/vertWorldSpace.shader",
 	"../content/shaders/fragCloud.shader");
+
+	mFXAA = Resources::Shaders.size();
+	Resources::Shaders.emplace_back(
+	"../content/shaders/vertFXAA.shader",
+	"../content/shaders/fragFXAA.shader");
+
+
+	mFullscreenTest = Resources::Shaders.size();
+	Resources::Shaders.emplace_back(
+	"../content/shaders/vertFullscreen.shader",
+	"../content/shaders/fragFullscreenTest.shader");
 
 	Scene &scene = host->mMemory->scene;
 
@@ -425,8 +475,9 @@ void ShaderPixel::deinit()
 void ShaderPixel::updateWindowSize(int x, int y)
 {
 	mWindowSize = {x,y};
-	glViewport(0, 0, x, y);
+	//glViewport(0, 0, x, y);
 	mAspectRatio = x / (float)y;
+	Renderer::Update(x, y);
 }
 
 void ShaderPixel::renderUI()
