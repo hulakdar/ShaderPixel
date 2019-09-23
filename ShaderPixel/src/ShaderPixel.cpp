@@ -99,18 +99,25 @@ void ShaderPixel::update()
 	// scene
 	Renderer::Draw(mem->scene, defaultShader, viewProjection);
 	
-	if (0)
+	if (1)
 		Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
 
 	// Mandelbox
 	if (1)
 	{
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
 		Shader* manbox = Resources::GetShader(mBox);
 
 		static glm::vec3 boxPos{ 487, 142, 144 };
 		ImGui::DragFloat3("Mandelbox position", &boxPos[0]);
 		static float boxScale = 1.1f;
 		ImGui::DragFloat("Mandelbox scale", &boxScale, 0.1f);
+
+
+		static float uInvDistThreshold = 0;
+		ImGui::SliderFloat("uInvDistThreshold", &uInvDistThreshold, 0.000001f, .2f);
+		manbox->SetUniform("uInvDistThreshold", uInvDistThreshold);
 
 		manbox->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
 
@@ -120,10 +127,9 @@ void ShaderPixel::update()
 	// cloud
 	if (1)
 	{
+		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT);
 
 		Shader* cloud = Resources::GetShader(mCloud);
 
@@ -134,6 +140,7 @@ void ShaderPixel::update()
 		CloudTexture->Bind();
 		cloud->SetUniform("uVolume", (GLint)0);
 		cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
+
 
 		Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
 		glDisable(GL_BLEND);

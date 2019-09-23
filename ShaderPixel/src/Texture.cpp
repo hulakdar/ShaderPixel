@@ -67,10 +67,10 @@ void Texture::uploadData(uint8_t *LocalBuffer, glm::ivec2 Size, int ComponentCou
 	GLenum formatsByComponentCount[] = {0, GL_RED, GL_RG, GL_RGB, GL_RGBA};
 	GLenum format = formatsByComponentCount[mComponentCount];
 	if (type == GL_TEXTURE_2D)
-		glTexImage2D(mType, 0, format, Size.x, Size.y, 0, format, GL_UNSIGNED_BYTE, LocalBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, Size.x, Size.y, 0, format, GL_UNSIGNED_BYTE, LocalBuffer);
 	else if (type == GL_TEXTURE_3D)
 	{
-		glTexImage3D(mType, 0, GL_RED, Size.x / slices, Size.y / slices, slices * slices, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, Size.x / slices, Size.y / slices, slices * slices, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, Size.x);
 		for (int i = 0; i < slices; i++)
 		{
@@ -78,7 +78,7 @@ void Texture::uploadData(uint8_t *LocalBuffer, glm::ivec2 Size, int ComponentCou
 			for (int j = 0; j < slices; j++)
 			{
 				glm::u8* Col = Row + (j * Size.x / slices);
-				GLCall(glTexSubImage3D(mType, 0,
+				GLCall(glTexSubImage3D(GL_TEXTURE_3D, 0,
 					0, 0, i * slices + j,
 					Size.x / slices, Size.y / slices, 1,
 					GL_RED, GL_UNSIGNED_BYTE, (void*)Col));
@@ -113,7 +113,7 @@ void Texture::Bind(unsigned int Slot) const
 	//if (mRendererID == s_CurrentlyBound)
 	//	return;
 	glActiveTexture(GL_TEXTURE0 + Slot);
-	glBindTexture(GL_TEXTURE_2D, mRendererID);
+	glBindTexture(mType, mRendererID);
 	//s_CurrentlyBound = mRendererID;
 }
 
