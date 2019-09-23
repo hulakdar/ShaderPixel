@@ -1,4 +1,4 @@
-project "ImGui"
+project "TinyObjLoader"
     kind "StaticLib"
     language "C++"
     
@@ -7,20 +7,59 @@ project "ImGui"
 
 	files
 	{
-        "imconfig.h",
-        "imgui.h",
-        "imgui.cpp",
-        "imgui_draw.cpp",
-        "imgui_internal.h",
-        "imgui_widgets.cpp",
-        "imstb_rectpack.h",
-        "imstb_textedit.h",
-        "imstb_truetype.h",
-        "imgui_demo.cpp"
+        "tinyobjloader/tiny_obj_loader.h",
+        "tinyobjloader/tiny_obj_loader.cc",
+    }
+
+    includedirs {
+        "tinyobjloader",
+    }
+
+	filter "system:windows"
+        systemversion "latest"
+        cppdialect "C++17"
+        --- staticruntime "On"
+
+	filter "configurations:Debug"
+		defines { "DEBUG" }
+		symbols "On"
+
+	filter "configurations:Development"
+		defines { "DEVELOPMENT" }
+		symbols "On"
+		optimize "On"
+
+	filter "configurations:Release"
+		defines { "RELEASE" }
+		optimize "On"
+		symbols "On"
+
+project "ImGui"
+	location "ImGui"
+    kind "SharedLib"
+    language "C++"
+    
+	targetdir ("../bin/" .. outputdir .. "/ShaderPixel")
+    objdir ("../bin-int/" .. outputdir .. "/ShaderPixel")
+
+    defines "IMGUI_API=__declspec(dllexport)"
+
+	files
+	{
+        "%{prj.name}/imconfig.h",
+        "%{prj.name}/imgui.h",
+        "%{prj.name}/imgui.cpp",
+        "%{prj.name}/imgui_draw.cpp",
+        "%{prj.name}/imgui_internal.h",
+        "%{prj.name}/imgui_widgets.cpp",
+        "%{prj.name}/imstb_rectpack.h",
+        "%{prj.name}/imstb_textedit.h",
+        "%{prj.name}/imstb_truetype.h",
+        "%{prj.name}/imgui_demo.cpp"
     }
     
 	filter "system:windows"
         systemversion "latest"
         cppdialect "C++17"
-        staticruntime "On"
+       --- taticruntime "On"
         buildoptions "/MT"

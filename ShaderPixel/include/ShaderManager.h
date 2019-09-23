@@ -1,50 +1,49 @@
 #pragma once
 
-
-#pragma once
-
-// Replace with your own GL header include
+/*
 #include <glad/glad.h>
-
 #include <vector>
 #include <utility>
 #include <map>
 #include <set>
 #include <string>
+#include "Utils.h"
 
 struct Shader
 {
-	typedef uint32_t Handle; //index into mHandles;
+	struct Timestamp {
+		::Timestamp vert;
+		::Timestamp frag;
+		void update(const std::string&, const std::string&);
+		bool operator == (const Timestamp& Other);
+		bool operator != (const Timestamp& Other);
+		operator bool ();
+	};
+	typedef uint32_t Handle; //index into mShaders
 	Handle mHandle;
 
 	void Bind();
+	void Uniform(const std::string& name, float scalar);
 };
 
 class ShaderManager
 {
 	friend Shader;
 private:
-	struct Timestamp
-	{
-		void update(const std::string& vertexPath, const std::string fragmentPath);
-		uint64_t vertex = 0;
-		uint64_t fragment = 0;
-		bool operator == (const Timestamp& Other);
-		bool operator != (const Timestamp& Other);
-	};
 	const GLuint GLOBAL_BLOCK_BINDING_LOCATION = 0;
 	std::string mVersion = "#version 410 core\n";
 	std::string mPrefix;
-	static std::map<std::string, Shader::Handle> sHandleMap;
-	static std::vector<GLuint>			sShaders;
-	static std::vector<Timestamp>		sTimestamps;
-	static std::vector<std::string>		sCompileErrors;
+	std::map<std::string, Shader::Handle>	mHandleMap;
+	std::vector<Shader::Timestamp>			mTimestamps;
+	std::vector<GLuint>						mShaders;
+	std::vector<std::string>				mCompileErrors;
 
 public:
 	ShaderManager() = default;
 	~ShaderManager();
 
-	void setPrefix(const std::string& preambleFilename);
-	static Shader AddProgram(const std::string& vertexPath, const std::string& fragmentPath);
-	void UpdatePrograms();
+	void	setPrefix(const std::string& preambleFilename);
+	Shader	getShader(const std::string& vertexPath, const std::string& fragmentPath);
+	void	updatePrograms();
 };
+*/

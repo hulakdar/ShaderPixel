@@ -1,95 +1,42 @@
-#include "ShaderManager.h"
-#include "Application.h"
+/*
+#include "ShaderPixel.h"
+#include "Host.h"
 
-#include <string>
-#include <fstream>
 #include <cstdio>
 #include <algorithm>
 #include <malloc.h>
 #include <assert.h>
 #include <imgui.h>
 
-#ifdef _WIN32
-#include <sys/stat.h>
-#else
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#endif
-
-static
-uint64_t GetFileTimestamp(const char* filename)
-{
-	uint64_t timestamp = 0;
-
-#ifdef _WIN32
-	struct __stat64 stFileInfo;
-	if (_stat64(filename, &stFileInfo) == 0)
-	{
-		timestamp = stFileInfo.st_mtime;
-	}
-#else
-	struct stat fileStat;
-
-	if (stat(filename, &fileStat) == -1)
-	{
-		perror(filename);
-		return 0;
-	}
-
-#ifdef __APPLE__
-	timestamp = fileStat.st_mtimespec.tv_sec;
-#else
-	timestamp = fileStat.st_mtime;
-#endif
-#endif
-
-	return timestamp;
-}
-
-void ShaderManager::Timestamp::update(const std::string& vertexPath, const std::string fragmentPath)
-{
-	vertex = GetFileTimestamp(vertexPath.c_str());
-	fragment = GetFileTimestamp(fragmentPath.c_str());
-}
-
-bool ShaderManager::Timestamp::operator==(const Timestamp& Other)
-{
-	return vertex == Other.vertex && fragment == Other.fragment;
-}
-bool ShaderManager::Timestamp::operator!=(const Timestamp& Other)
-{
-	return !(*this == Other);
-}
 
 ShaderManager::~ShaderManager()
 {
-	for (auto shader : sShaders)
+	for (auto shader : mShaders)
 	{
 		glDeleteProgram(shader);
 	}
 }
 
-Shader ShaderManager::AddProgram(const std::string& vertexPath, const std::string& fragmentPath)
+Shader ShaderManager::getShader(const std::string& vertexPath, const std::string& fragmentPath)
 {
 	const std::string key = vertexPath + ":" + fragmentPath;
 
-	auto it = sHandleMap.find(key);
-	if (it != sHandleMap.end())
+	auto it = mHandleMap.find(key);
+	if (it != mHandleMap.end())
 		return Shader{ it->second };
 
-	Shader result{ (uint32_t)sShaders.size() };
-	sTimestamps.emplace_back();
-	sCompileErrors.emplace_back("");
-	sShaders.emplace_back(0);
-	assert(sTimestamps.size() == sShaders.size() && sCompileErrors.size() == sTimestamps.size());
-	sHandleMap.emplace(key, result.mHandle);
+	Shader result{ (uint32_t)mShaders.size() };
+	mTimestamps.emplace_back();
+	mCompileErrors.emplace_back("");
+	mShaders.emplace_back(0);
+	assert(mTimestamps.size() == mShaders.size() && mCompileErrors.size() == mTimestamps.size());
+	mHandleMap.emplace(key, result.mHandle);
 	return result;
 }
 
-void ShaderManager::UpdatePrograms()
+void ShaderManager::updatePrograms()
 {
-	for (auto& handle : sHandleMap)
+	for (auto& handle : mHandleMap)
 	{
 		const std::string &paths = handle.first;
 		size_t colon = paths.find(':');
@@ -98,17 +45,19 @@ void ShaderManager::UpdatePrograms()
 
 		std::string vertexPath = paths.substr(0, colon);
 		std::string fragmentPath = paths.substr(colon+1, std::string::npos);
-		Timestamp currentTimestamp;
+		Shader::Timestamp currentTimestamp;
 		currentTimestamp.update(vertexPath, fragmentPath);
 
 		uint32_t index = handle.second;
 
-		Timestamp &timestamp = sTimestamps[index];
+		auto &timestamp = mTimestamps[index];
 		if (timestamp != currentTimestamp)
 		{
 			timestamp = currentTimestamp;
-			std::string& compileError = sCompileErrors[index];
+
+			std::string& compileError = mCompileErrors[index];
 			compileError.clear();
+
 			auto compileSingleShader = [&](const std::string& filePath, GLenum type) -> GLuint
 			{
 				GLuint result = glCreateShader(type);
@@ -117,6 +66,7 @@ void ShaderManager::UpdatePrograms()
 				const char* data = text.data();
 				glShaderSource(result, 1, &data, NULL);
 				glCompileShader(result);
+
 
 				GLint status;
 				glGetShaderiv(result, GL_COMPILE_STATUS, &status);
@@ -161,11 +111,11 @@ void ShaderManager::UpdatePrograms()
 					continue;
 				}
 			}
-			// this may be useful
+			// this might be useful
 			GLuint blockIndex = glGetUniformBlockIndex(program, "global");
 			if (blockIndex != GL_INVALID_INDEX)
 				glUniformBlockBinding(program, blockIndex, GLOBAL_BLOCK_BINDING_LOCATION);
-			GLuint& oldProgram = sShaders[index];
+			GLuint& oldProgram = mShaders[index];
 			if (oldProgram)
 				glDeleteProgram(oldProgram);
 			oldProgram = program;
@@ -174,9 +124,9 @@ void ShaderManager::UpdatePrograms()
 	}
 
 	ImGui::Begin("CompileErrors");
-	for (auto handle : sHandleMap)
+	for (auto handle : mHandleMap)
 	{
-		std::string& errorMessage = sCompileErrors[handle.second];
+		std::string& errorMessage = mCompileErrors[handle.second];
 		if (errorMessage.size())
 		{
 			ImGui::TextWrapped("%s:\n", handle.first.data());
@@ -186,17 +136,44 @@ void ShaderManager::UpdatePrograms()
 	ImGui::End();
 }
 
-void ShaderManager::setPrefix(const std::string& preambleFilename)
+void ShaderManager::setPrefix(const std::string& prefixFilename)
 {
-	mPrefix = Utils::StringFromFile(preambleFilename);
+	mPrefix = Utils::StringFromFile(prefixFilename);
 }
-
-std::map<std::string, Shader::Handle>	ShaderManager::sHandleMap;
-std::vector<ShaderManager::Timestamp>	ShaderManager::sTimestamps;
-std::vector<std::string>				ShaderManager::sCompileErrors;
-std::vector<GLuint>						ShaderManager::sShaders;
 
 void Shader::Bind()
 {
-	glUseProgram(ShaderManager::sShaders[mHandle]);
+	auto &host = getHost();
+	glUseProgram(host.mMemory->shaderManager.mShaders[mHandle]);
 }
+
+void Shader::Uniform(const std::string& name, float scalar)
+{
+	auto &host = getHost();
+	glUseProgram(host.mMemory->shaderManager.mShaders[mHandle]);
+	GLint location = glGetUniformLocation(host.mMemory->shaderManager.mShaders[mHandle], name.c_str());
+	if (location >= 0)
+		glUniform1f(location, scalar);
+}
+
+bool Shader::Timestamp::operator!=(const Timestamp& Other)
+{
+	return !(*this == Other);
+}
+
+bool Shader::Timestamp::operator==(const Timestamp& Other)
+{
+	return vert == Other.vert && frag == Other.frag;
+}
+
+Shader::Timestamp::operator bool ()
+{
+	return (frag && vert);
+}
+
+void Shader::Timestamp::update(const std::string& vertPath, const std::string& fragPath)
+{
+	vert.update(vertPath);
+	frag.update(fragPath);
+}
+*/

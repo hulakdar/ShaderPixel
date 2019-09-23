@@ -10,3 +10,6 @@
 [submodule "vendor/assimp/assimp"]
 	path = vendor/assimp/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "vendor/tinyobjloader"]
+	path = vendor/tinyobjloader
+	url = https://github.com/syoyo/tinyobjloader.git
