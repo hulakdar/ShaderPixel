@@ -7,7 +7,7 @@ in vec3 Normal;
 uniform sampler3D   uVolume;
 uniform uint    	uStepLimit = 64;
 uniform uint    	uShadowSteps = 32;
-uniform float   	uRayStepSize = 1/64.f;
+uniform float   	uRayStepSize = 1/128.f;
 uniform float   	uShadowThreshold = 0.3f;
 uniform vec3        uCamPosMS;
 

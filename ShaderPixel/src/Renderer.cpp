@@ -84,7 +84,7 @@ namespace Renderer
 	{
 		GLCall(glEnable(GL_DEPTH_TEST));
 		stbi_set_flip_vertically_on_load(true);
-		//glEnable(GL_MULTISAMPLE); need?
+		glEnable(GL_MULTISAMPLE); //need?
 
 		assert(Resources::Shaders.size() == 0);
 		assert(Resources::Textures.size() == 0);
@@ -154,9 +154,11 @@ namespace Renderer
 					{
 						glEnable(GL_CULL_FACE);
 						glCullFace(GL_BACK);
+						glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE); // global or per draw call?
 					}
 					else
 					{
+						glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); // global or per draw call?
 						glDisable(GL_CULL_FACE);
 					}
 

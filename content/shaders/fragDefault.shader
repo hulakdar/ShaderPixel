@@ -99,7 +99,7 @@ void main()
 	float currentDepth = gl_FragCoord.z;
 	a = min(a, currentDepth * currentDepth * currentDepth * currentDepth * currentDepth);
 
-	if (alphaTest(a))
+	if (alphaTest(smoothstep(0, 0.9, a)))
 		discard;
 
 #else

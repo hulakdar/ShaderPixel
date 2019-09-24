@@ -96,7 +96,8 @@ void ShaderPixel::update()
 		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
 		* cameraRotation * cameraTranslation;
 
-	setRenderTarget(&mSceneColor);
+	//setRenderTarget(&mSceneColor);
+	setRenderTarget(&Renderer::viewport);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	// scene
@@ -143,14 +144,13 @@ void ShaderPixel::update()
 		cloud->SetUniform("uVolume", (GLint)0);
 		cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
 
-
 		Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
 		glDisable(GL_BLEND);
 		glDisable(GL_CULL_FACE);
 		glDepthMask(true);
 	}
 
-	setRenderTarget(&Renderer::viewport);
+	//setRenderTarget(&Renderer::viewport);
 
 	static bool bFxaa;
 	ImGui::Checkbox("FXAA", &bFxaa);
@@ -183,7 +183,7 @@ void ShaderPixel::update()
 		passthrough->SetUniform("rcpFrame", 1.f / glm::vec2(512.f));
 	}
 
-	Renderer::DrawQuadFS();
+	//Renderer::DrawQuadFS();
 
 	// camera movement 
 	{
@@ -409,7 +409,7 @@ void ShaderPixel::init(Host* host)
 	Shader::GetShaderWithFeatures(7);
 	// hack.
 
-	mSceneColor = makeRenderTarget(glm::ivec2(512,512), GL_RGBA, true);
+	mSceneColor = makeRenderTarget(glm::ivec2(512,512), GL_RGB, true);
 
 	mBox = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(

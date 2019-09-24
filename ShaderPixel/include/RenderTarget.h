@@ -19,4 +19,5 @@ struct RenderTarget
 };
 
 RenderTarget	makeRenderTarget(glm::ivec2 size, GLenum colodFormat, bool needsDepth);
+RenderTarget	makeRenderTargetMultisampled(glm::ivec2 size, GLenum colorFormat, int sampleCount);
 void			setRenderTarget(RenderTarget*);
