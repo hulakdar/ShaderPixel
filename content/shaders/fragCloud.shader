@@ -5,7 +5,7 @@ in vec2 UV;
 in vec3 Normal;
 
 uniform sampler3D   uVolume;
-uniform uint    	uStepLimit = 64;
+uniform uint    	uStepLimit = 128;
 uniform uint    	uShadowSteps = 32;
 uniform float   	uRayStepSize = 1/128.f;
 uniform float   	uShadowThreshold = 0.3f;
@@ -62,7 +62,8 @@ vec4 NewTrace(vec3 CurPos, vec3 localcamvec, vec3 LightVector, float ShadowDensi
 
 float sampleVolume(vec3 p)
 {
-    return texture(uVolume, p + 0.5f).r;
+    ivec3 ts = textureSize(uVolume, 0);
+    return texture(uVolume, p + 0.5f).r; //clamp(p + 0.5f, 1.0/ts, vec3(1.0) - 1.0/ts)).r;
 }
 
 float trace(vec3 from, vec3 direction, float rayStepSize, float distanceLimit)
@@ -91,9 +92,9 @@ void main()
 	vec3 start = (FragPositionMS * 0.05f);
 	vec3 dir = normalize(FragToCamDirMS);
 
-    float theta = dot(dir, -Normal);
+    //float theta = dot(dir, -Normal);
 
 	float tmp = pow(trace(start, dir, uRayStepSize, length(FragToCamDirMS) * 0.05f), 0.4545);
-    tmp *= smoothstep(0.05, 0.09, theta);
-	FragColor = vec4(abs(start) * tmp, 1.f); //NewTrace(start, dir, normalize(vec3(1)), 1.f, 50.f);
+    //tmp *= smoothstep(0.05, 0.09, theta);
+	FragColor = vec4(tmp,tmp,tmp, 1.f); //NewTrace(start, dir, normalize(vec3(1)), 1.f, 50.f);
 }

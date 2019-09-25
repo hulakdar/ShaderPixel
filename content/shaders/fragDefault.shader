@@ -99,7 +99,7 @@ void main()
 	float currentDepth = gl_FragCoord.z;
 	a = min(a, currentDepth * currentDepth * currentDepth * currentDepth * currentDepth);
 
-	if (alphaTest(smoothstep(0, 0.9, a)))
+	if (alphaTest(smoothstep(.0, .9, a)))
 		discard;
 
 #else
@@ -109,7 +109,7 @@ void main()
 #endif
 
 
-    vec3 diffuse = albedo * D * 0.5f;
-    vec3 ambient = albedo * 0.5f;
+    vec3 diffuse = albedo * D * 0.6f;
+    vec3 ambient = albedo * 0.34f;
 	fragColor = vec4(diffuse + ambient, a);
 }

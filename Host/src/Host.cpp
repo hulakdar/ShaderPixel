@@ -94,7 +94,7 @@ Host::Host(const std::string &dllPath)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_SAMPLES, 8);
+	glfwWindowHint(GLFW_SAMPLES, 4);
 	//glfwWindowHint(GLFW_FLOATING, 1); // window always on top
 
 	mWindow = glfwCreateWindow(600, 600, "ShaderPixel", nullptr, nullptr);

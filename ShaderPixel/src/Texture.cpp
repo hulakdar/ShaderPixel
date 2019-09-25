@@ -49,7 +49,6 @@ void Texture::uploadData(uint8_t *LocalBuffer, glm::ivec2 Size, int ComponentCou
 	mSize = Size;
 	mType = type;
 
-	glTexParameteri(mType, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(mType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	if (type == GL_TEXTURE_3D)
@@ -57,9 +56,11 @@ void Texture::uploadData(uint8_t *LocalBuffer, glm::ivec2 Size, int ComponentCou
 		glTexParameteri(mType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 		glTexParameteri(mType, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(mType, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(mType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	}
 	else
 	{
+		glTexParameteri(mType, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(mType, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(mType, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	}

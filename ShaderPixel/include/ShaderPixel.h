@@ -28,7 +28,9 @@ private:
 	ShaderID	mCloud;
 	ShaderID	mFullscreenTest;
 
+	RenderTarget mSceneColorMS;
 	RenderTarget mSceneColor;
+	RenderTarget mPostProcess;
 
 	float		mAspectRatio = 1.f;
 	float		mSpeed = 1.f;
