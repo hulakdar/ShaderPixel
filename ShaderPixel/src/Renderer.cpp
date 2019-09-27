@@ -91,6 +91,10 @@ namespace Renderer
 		Resources::Shaders.emplace_back(0); // default shader
 		Resources::Textures.emplace_back();// default texture
 
+		Resources::Shaders.emplace_back(
+		"../content/shaders/vertDefault.shader",
+		"../content/shaders/fragShadow.shader");
+
 		{
 			QuadBuffer.Init(QuadData, sizeof(QuadData));
 
@@ -153,7 +157,6 @@ namespace Renderer
 					if (material->blendMode == BlendMode::Opaque)
 					{
 						glEnable(GL_CULL_FACE);
-						glCullFace(GL_BACK);
 						glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE); // global or per draw call?
 					}
 					else

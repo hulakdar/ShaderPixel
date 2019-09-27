@@ -7,15 +7,17 @@ out VS_OUT
 {
     vec2 TexCoord;
     vec3 Normal;
-    float VertexOffset;
+    vec4 FragPosLightSpace;
 }   vs_out;
 
 uniform mat4 uMVP;
+uniform mat4 uLightSpaceMatrix;
 
 void main()
 {
-	vs_out.VertexOffset = float(gl_VertexID);
+	gl_Position = uMVP * vPos;
+
 	vs_out.TexCoord = vUV;
 	vs_out.Normal = vNorm;
-	gl_Position = uMVP * vPos;
+    vs_out.FragPosLightSpace = uLightSpaceMatrix * vec4(vPos.xyz, 1.0);
 }

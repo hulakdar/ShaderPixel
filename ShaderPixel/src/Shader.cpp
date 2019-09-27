@@ -17,34 +17,30 @@ static std::map<FeatureMask, ShaderID> sPermutations;
 static std::string GetShaderSource(const std::string& Filepath, const std::string& Modifier)
 {
 	std::string result = "#version 410\n" + Modifier;
-	// temporary string for holding line from file
+
 	auto It= sShaderCache.find(Filepath);
 	if (It != sShaderCache.end())
-	{
-		result += It->second;
-	}
+		return result + It->second;
+
+	std::string shaderSource;
+	std::string tmp;
+	std::ifstream ShaderFile(Filepath);
+	if (!ShaderFile.is_open() || ShaderFile.bad())
+		std::cerr << "Problems reading shader from: " << Filepath << '\n';
+
+	if (std::getline(ShaderFile, tmp))
+		shaderSource += tmp + "\n";
 	else
 	{
-		std::string shaderSource;
-		std::string tmp;
-		std::ifstream ShaderFile(Filepath);
-		if (!ShaderFile.is_open() || ShaderFile.bad())
-			std::cerr << "Problems reading shader from: " << Filepath << '\n';
-
-		if (std::getline(ShaderFile, tmp))
-			shaderSource += tmp + "\n";
-		else
-		{
-			std::cerr << "Problems reading shader from: " << Filepath << '\n';
-		}
-
-		while (std::getline(ShaderFile, tmp))
-			shaderSource += tmp + "\n";
-
-		sShaderCache[Filepath] = shaderSource;
-
-		result += shaderSource;
+		std::cerr << "Problems reading shader from: " << Filepath << '\n';
 	}
+
+	while (std::getline(ShaderFile, tmp))
+		shaderSource += tmp + "\n";
+
+	sShaderCache[Filepath] = shaderSource;
+
+	result += shaderSource;
 	return result;
 }
 

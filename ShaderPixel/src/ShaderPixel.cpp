@@ -96,11 +96,56 @@ void ShaderPixel::update()
 		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
 		* cameraRotation * cameraTranslation;
 
+	ImGui::SliderAngle("lightX", &mLightAngles.x);
+	ImGui::SliderAngle("lightY", &mLightAngles.y);
+	ImGui::SliderAngle("lightZ", &mLightAngles.z);
+
+	static glm::vec2	LR = {-2650, 2650};
+	static glm::vec2	BT = {-2100, 2100};
+	static glm::vec2	NF = {-2800, 2600};
+
+	ImGui::Begin("Lights");
+	ImGui::DragFloat2("LR", &LR[0]);
+	ImGui::DragFloat2("BT", &BT[0]);
+	ImGui::DragFloat2("NF", &NF[0]);
+	ImGui::End();
+
+	glm::mat4 shadowView =
+		glm::rotate(
+		glm::rotate(
+		glm::rotate(
+			glm::mat4(1.f),	
+			mLightAngles.x, glm::vec3(1,0,0)),
+			mLightAngles.y, glm::vec3(0,1,0)),
+			mLightAngles.z, glm::vec3(0,0,1));
+	glm::mat4 shadowProjection = glm::ortho(LR[0], LR[1], BT[0], BT[1], NF[0], NF[1]);
+
+	glm::mat4 shadowTransform = shadowProjection * shadowView;
+
+	setRenderTarget(&mShadow);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	Shader* shadowShader = Resources::GetShader(1);
+
+	//shadowShader->Bind();
+	//glCullFace(GL_FRONT);
+	// shadow
+	Renderer::Draw(mem->scene, shadowShader, shadowTransform);
+
 	setRenderTarget(&mSceneColorMS);
-	//setRenderTarget(&Renderer::viewport);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+	glActiveTexture(GL_TEXTURE15);
+	glBindTexture(GL_TEXTURE_2D, mShadow.textures[1]);
+
+	static glm::vec3 LIGHT_DIR{ 0,0,1 };
+	ImGui::InputFloat3("LIGHT_DIR", &LIGHT_DIR[0], 2);
+
 	// scene
+	defaultShader->SetUniform("uShadow", 15);
+	defaultShader->SetUniform("uLightDir", glm::normalize(glm::inverse(glm::mat3(shadowView)) * LIGHT_DIR));
+	defaultShader->SetUniform("uLightSpaceMatrix", shadowTransform);
+	glCullFace(GL_BACK);
 	Renderer::Draw(mem->scene, defaultShader, viewProjection);
 	if (1)
 		Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
@@ -130,7 +175,7 @@ void ShaderPixel::update()
 	// cloud
 	if (1)
 	{
-		//glEnable(GL_BLEND);
+		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 		glDepthMask(false);
 
@@ -151,15 +196,16 @@ void ShaderPixel::update()
 	}
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, mSceneColorMS.rendererID); // src FBO (multi-sample)
-glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mSceneColor.rendererID);     // dst FBO (single-sample)
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mSceneColor.rendererID);     // dst FBO (single-sample)
 
-glBlitFramebuffer(0, 0, mSceneColorMS.size.x, mSceneColorMS.size.x, // src rect
-                  0, 0, mSceneColor.size.x, mSceneColor.size.x,     // dst rect
-                  GL_COLOR_BUFFER_BIT,								// buffer mask
-                  GL_LINEAR);
+	glBlitFramebuffer(0, 0, mSceneColorMS.size.x, mSceneColorMS.size.x, // src rect
+					  0, 0, mSceneColor.size.x, mSceneColor.size.x,     // dst rect
+					  GL_COLOR_BUFFER_BIT,								// buffer mask
+					  GL_LINEAR);
 
 	setRenderTarget(&Renderer::viewport);
 
+	ImGui::Begin("Postprocess");
 	static bool bFxaa;
 	ImGui::Checkbox("FXAA", &bFxaa);
 	if (bFxaa)
@@ -176,7 +222,7 @@ glBlitFramebuffer(0, 0, mSceneColorMS.size.x, mSceneColorMS.size.x, // src rect
 		ImGui::DragFloat("FXAA_SPAN_MAX", &FXAA_SPAN_MAX, 0.1f);
 		fxaa->SetUniform("FXAA_SPAN_MAX", FXAA_SPAN_MAX);
 
-		static float FXAA_REDUCE_MUL = 0.1f;
+		static float FXAA_REDUCE_MUL = 0.333f;
 		ImGui::SliderFloat("FXAA_REDUCE_MUL", &FXAA_REDUCE_MUL, 0.f, 1.f);
 		fxaa->SetUniform("FXAA_REDUCE_MUL", FXAA_REDUCE_MUL);
 	}
@@ -186,10 +232,11 @@ glBlitFramebuffer(0, 0, mSceneColorMS.size.x, mSceneColorMS.size.x, // src rect
 		passthrough->Bind();
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, mSceneColor.textures[0]);
+		glBindTexture(GL_TEXTURE_2D, mShadow.textures[1]);
 		passthrough->SetUniform("uInputTex", 0);
 		passthrough->SetUniform("rcpFrame", 1.f / glm::vec2(512.f));
 	}
+	ImGui::End();
 
 	Renderer::DrawQuadFS();
 
@@ -257,11 +304,16 @@ void ShaderPixel::onMouseMove(float x, float y, float dX, float dY)
 	(void)x;
 	(void)y;
 
-	if (glfwGetMouseButton(staticHost()->mWindow, GLFW_MOUSE_BUTTON_2) != GLFW_PRESS)
-		return;
-
-	mCameraAngles.x += dX / mWindowSize.x;
-	mCameraAngles.y += dY / mWindowSize.y;
+	if (glfwGetMouseButton(staticHost()->mWindow, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+	{
+		mCameraAngles.x += dX / mWindowSize.x;
+		mCameraAngles.y += dY / mWindowSize.y;
+	}
+	else if (glfwGetMouseButton(staticHost()->mWindow, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
+	{
+		//mLightAngles.x += dX / mWindowSize.x;
+		//mLightAngles.y += dY / mWindowSize.y;
+	}
 }
 
 void ShaderPixel::onScroll(float x, float y)
@@ -417,8 +469,9 @@ void ShaderPixel::init(Host* host)
 	Shader::GetShaderWithFeatures(7);
 	// hack.
 
-	mSceneColorMS = makeRenderTargetMultisampled(glm::ivec2(1024,1024), GL_RGB, 8);
-	mSceneColor = makeRenderTarget(glm::ivec2(1024,1024), GL_RGB, true);
+	mShadow = makeRenderTargetShadow(glm::ivec2(4096, 4096));
+	mSceneColorMS = makeRenderTargetMultisampled(glm::ivec2(1920,1080), GL_RGB, 8);
+	mSceneColor = makeRenderTarget(glm::ivec2(1920,1080), GL_RGB, true);
 
 	mBox = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
@@ -434,7 +487,6 @@ void ShaderPixel::init(Host* host)
 	Resources::Shaders.emplace_back(
 	"../content/shaders/vertFXAA.shader",
 	"../content/shaders/fragFXAA.shader");
-
 
 	mFullscreenTest = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(

@@ -94,7 +94,7 @@ void main()
 
     //float theta = dot(dir, -Normal);
 
-	float tmp = pow(trace(start, dir, uRayStepSize, length(FragToCamDirMS) * 0.05f), 0.4545);
+	float tmp = trace(start, dir, uRayStepSize, length(FragToCamDirMS) * 0.05f);
     //tmp *= smoothstep(0.05, 0.09, theta);
-	FragColor = vec4(tmp,tmp,tmp, 1.f); //NewTrace(start, dir, normalize(vec3(1)), 1.f, 50.f);
+	FragColor = vec4(tmp * abs(start), 1.f); //NewTrace(start, dir, normalize(vec3(1)), 1.f, 50.f);
 }

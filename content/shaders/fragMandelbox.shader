@@ -1,8 +1,8 @@
 
-const float BOX_FOLD = 1.f;
-const float SCALE = 2.5f;
-const float MIN_RADIUS = 0.5f;
-const float FIXED_RADIUS = 1.f;
+const float BOX_FOLD = 1.0;
+const float SCALE = 2.1;
+const float MIN_RADIUS = 0.5;
+const float FIXED_RADIUS = 1.0;
 const float LINEAR_SCALE = FIXED_RADIUS / MIN_RADIUS;
 
 in vec3 FragPositionMS;
@@ -71,6 +71,8 @@ void trace(vec3 from, vec3 direction, out float AO, out float distance)
 		if (distance < uMinimumDistance)
 			break;
 	}
+    if (totalDistance > 29)
+        discard;
 	AO = 1.f - float(steps)/MaxRaySteps;
     distance = totalDistance;
 }
@@ -85,8 +87,8 @@ void main()
     float AO = 0;
     float distance = 0;
 	trace(start, dir, AO, distance);
-    AO = smoothstep(0.0,1.0,AO);
+    AO = smoothstep(0.0,0.4,AO);
 
-	float tmp = pow(AO, 0.4545);
-	FragColor = vec4(tmp, tmp, tmp, 1);
+    vec3 end = (start + dir * distance);
+	FragColor = vec4(AO * abs(sin(end)) , 1);
 }

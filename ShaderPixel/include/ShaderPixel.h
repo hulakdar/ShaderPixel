@@ -31,10 +31,12 @@ private:
 	RenderTarget mSceneColorMS;
 	RenderTarget mSceneColor;
 	RenderTarget mPostProcess;
+	RenderTarget mShadow;
 
 	float		mAspectRatio = 1.f;
 	float		mSpeed = 1.f;
 
+	glm::vec3	mLightAngles	{ 1., 1.5, 0. };
 	glm::vec3	mCameraPosition {0,10,50};
 	glm::vec3	mCameraForward	{0,0,1};
 	glm::vec3	mCameraRight	{1,0,0};

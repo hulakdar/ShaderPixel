@@ -5,7 +5,7 @@ in VS_OUT
 {
     vec2 TexCoord;
     vec3 Normal;
-    float VertexOffset;
+    vec4 FragPosLightSpace;
 }   vs_out;
 
 out vec4 fragColor;
@@ -13,6 +13,7 @@ out vec4 fragColor;
 uniform float uTime;
 uniform sampler2D uDiffuse;
 uniform sampler2D uAlpha;
+uniform sampler2DShadow uShadow;
 
 #if DITHER_16
 // bytes packed in uint fo less cache misses
@@ -51,8 +52,8 @@ bool ditheredAlphaTest(float opacity)
 	const int size = 4;
 #endif
 
-    int x = int(gl_FragCoord.x + vs_out.VertexOffset) % size;
-    int y = int(gl_FragCoord.y + vs_out.VertexOffset) % size;
+    int x = int(gl_FragCoord.x) % size;
+    int y = int(gl_FragCoord.y) % size;
     int index = x + y * size;
 
 #if DITHER_16
@@ -77,7 +78,38 @@ bool alphaTest(float a)
 #endif
 }
 
-vec3 lightDir = vec3(0.6f);
+uniform vec3 uLightDir = vec3(0.6f);
+
+float shadowCalculation(vec4 fragPosLightSpace)
+{
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    //if (currentDepth > 1.f)
+        //return 0.f;
+    float bias = 0.; // max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float shadow = 0.0;
+
+    vec2 texelSize = 1.0 / textureSize(uShadow, 0);
+    for(int x = -3; x <= 3; ++x)
+    {
+        for(int y = -3; y <= 3; ++y)
+        {
+            float pcfDepth = texture(uShadow, projCoords + vec3(x, y, 0.f) * vec3(texelSize * 2.7, 1.f)); 
+            shadow += float(currentDepth - bias > pcfDepth);
+        }    
+    }
+    shadow *= 0.0202;
+    
+    // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+     if(projCoords.z > 1.0)
+         shadow = 0.0;
+        
+    return shadow;
+}
 
 void main()
 {
@@ -86,7 +118,7 @@ void main()
 
 #if MASKED
 
-    float D = abs(dot(lightDir, vs_out.Normal));
+    float D = abs(dot(uLightDir, vs_out.Normal));
 
 	// get alpha from somewhere
 # if ALPHA_TEXTURE
@@ -105,11 +137,13 @@ void main()
 #else
 	// default opaque case
 	const float a = 1;
-    float D = max(dot(lightDir, vs_out.Normal), 0.f);
+    float D = max(dot(uLightDir, vs_out.Normal), 0.f);
 #endif
 
 
-    vec3 diffuse = albedo * D * 0.6f;
-    vec3 ambient = albedo * 0.34f;
+    float shadow = shadowCalculation(vs_out.FragPosLightSpace);
+
+    vec3 diffuse = albedo * D * shadow * 0.5;
+    vec3 ambient = albedo * 0.15;
 	fragColor = vec4(diffuse + ambient, a);
 }
