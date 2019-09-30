@@ -29,9 +29,11 @@ private:
 	ShaderID	mFullscreenTest;
 
 	RenderTarget mSceneColorMS;
-	RenderTarget mSceneColor;
-	RenderTarget mPostProcess;
 	RenderTarget mShadow;
+	RenderTarget mEnvProbe;
+
+	enum { Ping, Pong } mCurrent = Ping;
+	RenderTarget mPingPong[2];
 
 	float		mAspectRatio = 1.f;
 	float		mSpeed = 1.f;

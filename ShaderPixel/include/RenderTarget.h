@@ -20,5 +20,6 @@ struct RenderTarget
 
 RenderTarget	makeRenderTarget(glm::ivec2 size, GLenum colodFormat, bool needsDepth);
 RenderTarget	makeRenderTargetShadow(glm::ivec2 size);
+RenderTarget	makeRenderTargetCube(glm::ivec2 size, bool needsDepth);
 RenderTarget	makeRenderTargetMultisampled(glm::ivec2 size, GLenum colorFormat, int sampleCount);
 void			setRenderTarget(RenderTarget*);

@@ -85,160 +85,12 @@ void ShaderPixel::update()
 	ImGui::SliderFloat("Near", &Near, 0.1f, 3.f);
 	ImGui::SliderFloat("Far", &Far, 6.f, 90000.f);
 
+
 	glm::mat4 cameraRotation = glm::rotate(
 		glm::rotate(glm::mat4(1),
 			mCameraAngles.y, glm::vec3(1, 0, 0)),
 		mCameraAngles.x, glm::vec3(0, 1, 0)
 	);
-
-	glm::mat4 cameraTranslation = glm::translate(glm::mat4(1), -mCameraPosition);
-	glm::mat4 viewProjection =
-		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
-		* cameraRotation * cameraTranslation;
-
-	ImGui::SliderAngle("lightX", &mLightAngles.x);
-	ImGui::SliderAngle("lightY", &mLightAngles.y);
-	ImGui::SliderAngle("lightZ", &mLightAngles.z);
-
-	static glm::vec2	LR = {-2650, 2650};
-	static glm::vec2	BT = {-2100, 2100};
-	static glm::vec2	NF = {-2800, 2600};
-
-	ImGui::Begin("Lights");
-	ImGui::DragFloat2("LR", &LR[0]);
-	ImGui::DragFloat2("BT", &BT[0]);
-	ImGui::DragFloat2("NF", &NF[0]);
-	ImGui::End();
-
-	glm::mat4 shadowView =
-		glm::rotate(
-		glm::rotate(
-		glm::rotate(
-			glm::mat4(1.f),	
-			mLightAngles.x, glm::vec3(1,0,0)),
-			mLightAngles.y, glm::vec3(0,1,0)),
-			mLightAngles.z, glm::vec3(0,0,1));
-	glm::mat4 shadowProjection = glm::ortho(LR[0], LR[1], BT[0], BT[1], NF[0], NF[1]);
-
-	glm::mat4 shadowTransform = shadowProjection * shadowView;
-
-	setRenderTarget(&mShadow);
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	Shader* shadowShader = Resources::GetShader(1);
-
-	//shadowShader->Bind();
-	//glCullFace(GL_FRONT);
-	// shadow
-	Renderer::Draw(mem->scene, shadowShader, shadowTransform);
-
-	setRenderTarget(&mSceneColorMS);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-	glActiveTexture(GL_TEXTURE15);
-	glBindTexture(GL_TEXTURE_2D, mShadow.textures[1]);
-
-	static glm::vec3 LIGHT_DIR{ 0,0,1 };
-	ImGui::InputFloat3("LIGHT_DIR", &LIGHT_DIR[0], 2);
-
-	// scene
-	defaultShader->SetUniform("uShadow", 15);
-	defaultShader->SetUniform("uLightDir", glm::normalize(glm::inverse(glm::mat3(shadowView)) * LIGHT_DIR));
-	defaultShader->SetUniform("uLightSpaceMatrix", shadowTransform);
-	glCullFace(GL_BACK);
-	Renderer::Draw(mem->scene, defaultShader, viewProjection);
-	if (1)
-		Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
-
-	// Mandelbox
-	if (1)
-	{
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT);
-		Shader* manbox = Resources::GetShader(mBox);
-
-		static glm::vec3 boxPos{ 487, 142, 144 };
-		ImGui::DragFloat3("Mandelbox position", &boxPos[0]);
-		static float boxScale = 1.1f;
-		ImGui::DragFloat("Mandelbox scale", &boxScale, 0.1f);
-
-
-		static float uInvDistThreshold = 0;
-		ImGui::SliderFloat("uInvDistThreshold", &uInvDistThreshold, 0.000001f, .2f);
-		manbox->SetUniform("uInvDistThreshold", uInvDistThreshold);
-
-		manbox->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
-
-		Renderer::DrawCubeWS(boxPos, boxScale, manbox, viewProjection);
-	}
-
-	// cloud
-	if (1)
-	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
-		glDepthMask(false);
-
-		Shader* cloud = Resources::GetShader(mCloud);
-
-		glm::vec3 boxPos{ 0,750,0 };
-		float boxScale = 5;
-
-		Texture* CloudTexture = Resources::GetTexture(Texture::Cloud);
-		CloudTexture->Bind();
-		cloud->SetUniform("uVolume", (GLint)0);
-		cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
-
-		Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
-		glDisable(GL_BLEND);
-		glDisable(GL_CULL_FACE);
-		glDepthMask(true);
-	}
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, mSceneColorMS.rendererID); // src FBO (multi-sample)
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mSceneColor.rendererID);     // dst FBO (single-sample)
-
-	glBlitFramebuffer(0, 0, mSceneColorMS.size.x, mSceneColorMS.size.x, // src rect
-					  0, 0, mSceneColor.size.x, mSceneColor.size.x,     // dst rect
-					  GL_COLOR_BUFFER_BIT,								// buffer mask
-					  GL_LINEAR);
-
-	setRenderTarget(&Renderer::viewport);
-
-	ImGui::Begin("Postprocess");
-	static bool bFxaa;
-	ImGui::Checkbox("FXAA", &bFxaa);
-	if (bFxaa)
-	{
-		Shader* fxaa = Resources::GetShader(mFXAA);
-		fxaa->Bind();
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, mSceneColor.textures[0]);
-		fxaa->SetUniform("uInputTex", 0);
-		fxaa->SetUniform("rcpFrame", 1.f / glm::vec2(512.f));
-
-		static float FXAA_SPAN_MAX = 8;
-		ImGui::DragFloat("FXAA_SPAN_MAX", &FXAA_SPAN_MAX, 0.1f);
-		fxaa->SetUniform("FXAA_SPAN_MAX", FXAA_SPAN_MAX);
-
-		static float FXAA_REDUCE_MUL = 0.333f;
-		ImGui::SliderFloat("FXAA_REDUCE_MUL", &FXAA_REDUCE_MUL, 0.f, 1.f);
-		fxaa->SetUniform("FXAA_REDUCE_MUL", FXAA_REDUCE_MUL);
-	}
-	else
-	{
-		Shader* passthrough = Resources::GetShader(mFullscreenTest);
-		passthrough->Bind();
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, mShadow.textures[1]);
-		passthrough->SetUniform("uInputTex", 0);
-		passthrough->SetUniform("rcpFrame", 1.f / glm::vec2(512.f));
-	}
-	ImGui::End();
-
-	Renderer::DrawQuadFS();
 
 	// camera movement 
 	{
@@ -292,6 +144,196 @@ void ShaderPixel::update()
 
 		mCameraAngles.y = glm::clamp(mCameraAngles.y, -float(M_PI_2), float(M_PI_2));
 	}
+
+
+	glm::mat4 cameraTranslation = glm::translate(glm::mat4(1), -mCameraPosition);
+	glm::mat4 viewProjection =
+		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
+		* cameraRotation * cameraTranslation;
+
+
+	ImGui::SliderAngle("lightX", &mLightAngles.x);
+	ImGui::SliderAngle("lightY", &mLightAngles.y);
+	ImGui::SliderAngle("lightZ", &mLightAngles.z);
+
+	static glm::vec2	LR = {-2650, 2650};
+	static glm::vec2	BT = {-2100, 2100};
+	static glm::vec2	NF = {-2800, 2600};
+
+	ImGui::Begin("Lights");
+	ImGui::DragFloat2("LR", &LR[0]);
+	ImGui::DragFloat2("BT", &BT[0]);
+	ImGui::DragFloat2("NF", &NF[0]);
+	ImGui::End();
+
+	glm::mat4 shadowView =
+		glm::rotate(
+		glm::rotate(
+		glm::rotate(
+			glm::mat4(1.f),	
+			mLightAngles.x, glm::vec3(1,0,0)),
+			mLightAngles.y, glm::vec3(0,1,0)),
+			mLightAngles.z, glm::vec3(0,0,1));
+	glm::mat4 shadowProjection = glm::ortho(LR[0], LR[1], BT[0], BT[1], NF[0], NF[1]);
+
+	glm::mat4 shadowTransform = shadowProjection * shadowView;
+
+	setRenderTarget(&mShadow);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	Shader* shadowShader = Resources::GetShader(1);
+
+	//shadowShader->Bind();
+	//glCullFace(GL_FRONT);
+	// shadow
+	Renderer::Draw(mem->scene, shadowShader, shadowTransform);
+
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE15);
+	glBindTexture(GL_TEXTURE_2D, mShadow.textures[1]);
+
+	static glm::vec3 LIGHT_DIR{ 0,0,1 };
+	ImGui::InputFloat3("LIGHT_DIR", &LIGHT_DIR[0], 2);
+
+	// scene
+	defaultShader->SetUniform("uShadow", 15);
+	defaultShader->SetUniform("uLightDir", glm::normalize(glm::inverse(glm::mat3(shadowView)) * LIGHT_DIR));
+	defaultShader->SetUniform("uLightSpaceMatrix", shadowTransform);
+
+	glCullFace(GL_BACK);
+
+	// capture cubemap
+	if (0)
+	{
+		setRenderTarget(&mEnvProbe);
+		glm::vec3 targetVectors[6] = {
+			glm::vec3(1.0f, 0.0f, 0.0f),
+			glm::vec3(-1.0f, 0.0f, 0.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f),
+			glm::vec3(0.0f, -1.0f, 0.0f),
+			glm::vec3(0.0f, 0.0f, 1.0f),
+			glm::vec3(0.0f, 0.0f, -1.0f)
+		};
+		glm::vec3 upVectors[6] = {
+			glm::vec3(0.0f, -1.0f, 0.0f),
+			glm::vec3(0.0f, -1.0f, 0.0f),
+			glm::vec3(0.0f, 0.0f, 1.0f),
+			glm::vec3(0.0f, 0.0f, -1.0f),
+			glm::vec3(0.0f, -1.0f, 0.0f),
+			glm::vec3(0.0f, -1.0f, 0.0f)
+		};
+
+		const static glm::vec3 probePosition{ 0, 400, 0 };
+		const static glm::mat4 projection = glm::perspective(90.f, 1.f, 1.f, 90000.f);
+
+		for (GLuint face = 0; face < 6; ++face)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mEnvProbe.textures[RenderTarget::Color], 0);
+			glClear(GL_DEPTH_BUFFER_BIT);
+
+			glm::mat4 view = glm::lookAt(probePosition, probePosition + targetVectors[face], upVectors[face]);
+			Renderer::Draw(mem->scene, defaultShader, view);
+		}
+	}
+
+	setRenderTarget(&mSceneColorMS);
+
+	Renderer::Draw(mem->scene, defaultShader, viewProjection);
+	if (1)
+		Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
+
+	// Mandelbox
+	if (1)
+	{
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+		Shader* manbox = Resources::GetShader(mBox);
+
+		static glm::vec3 boxPos{ 487, 142, 144 };
+		ImGui::DragFloat3("Mandelbox position", &boxPos[0]);
+		static float boxScale = 1.1f;
+		ImGui::DragFloat("Mandelbox scale", &boxScale, 0.1f);
+
+
+		static float uInvDistThreshold = 0;
+		ImGui::SliderFloat("uInvDistThreshold", &uInvDistThreshold, 0.000001f, .2f);
+		manbox->SetUniform("uInvDistThreshold", uInvDistThreshold);
+
+		manbox->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
+
+		Renderer::DrawCubeWS(boxPos, boxScale, manbox, viewProjection);
+	}
+
+	// cloud
+	if (1)
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glDepthMask(false);
+
+		Shader* cloud = Resources::GetShader(mCloud);
+
+		glm::vec3 boxPos{ 0,750,0 };
+		float boxScale = 5;
+
+		Texture* CloudTexture = Resources::GetTexture(Texture::Cloud);
+		CloudTexture->Bind();
+		cloud->SetUniform("uVolume", (GLint)0);
+		cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
+
+		Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
+		glDisable(GL_BLEND);
+		glDisable(GL_CULL_FACE);
+		glDepthMask(true);
+	}
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, mSceneColorMS.rendererID); // src FBO (multi-sample)
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPingPong[mCurrent].rendererID);     // dst FBO (single-sample)
+
+	glBlitFramebuffer(0, 0, mSceneColorMS.size.x, mSceneColorMS.size.x, // src rect
+					  0, 0, mPingPong[mCurrent].size.x, mPingPong[mCurrent].size.x,     // dst rect
+					  GL_COLOR_BUFFER_BIT,								// buffer mask
+					  GL_LINEAR);
+
+	setRenderTarget(&Renderer::viewport);
+
+	ImGui::Begin("Postprocess");
+	static bool bFxaa;
+	ImGui::Checkbox("FXAA", &bFxaa);
+	if (bFxaa)
+	{
+		Shader* fxaa = Resources::GetShader(mFXAA);
+		fxaa->Bind();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, mPingPong[mCurrent].textures[0]);
+		fxaa->SetUniform("uInputTex", 0);
+		fxaa->SetUniform("rcpFrame", 1.f / glm::vec2(512.f));
+
+		static float FXAA_SPAN_MAX = 8;
+		ImGui::DragFloat("FXAA_SPAN_MAX", &FXAA_SPAN_MAX, 0.1f);
+		fxaa->SetUniform("FXAA_SPAN_MAX", FXAA_SPAN_MAX);
+
+		static float FXAA_REDUCE_MUL = 0.333f;
+		ImGui::SliderFloat("FXAA_REDUCE_MUL", &FXAA_REDUCE_MUL, 0.f, 1.f);
+		fxaa->SetUniform("FXAA_REDUCE_MUL", FXAA_REDUCE_MUL);
+	}
+	else
+	{
+		Shader* passthrough = Resources::GetShader(mFullscreenTest);
+		passthrough->Bind();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, mPingPong[mCurrent].textures[0]);
+		passthrough->SetUniform("uInputTex", 0);
+		passthrough->SetUniform("rcpFrame", 1.f / glm::vec2(512.f));
+	}
+	ImGui::End();
+
+	Renderer::DrawQuadFS();
+
 }
 
 ShaderPixel::~ShaderPixel()
@@ -470,8 +512,11 @@ void ShaderPixel::init(Host* host)
 	// hack.
 
 	mShadow = makeRenderTargetShadow(glm::ivec2(4096, 4096));
-	mSceneColorMS = makeRenderTargetMultisampled(glm::ivec2(1920,1080), GL_RGB, 8);
-	mSceneColor = makeRenderTarget(glm::ivec2(1920,1080), GL_RGB, true);
+
+	mSceneColorMS = makeRenderTargetMultisampled(glm::ivec2(1024,1024), GL_RGB, 8);
+	mPingPong[0] = makeRenderTarget(glm::ivec2(1024,1024), GL_RGB, true);
+	mPingPong[1] = makeRenderTarget(glm::ivec2(1024,1024), GL_RGB, true);
+	mEnvProbe = makeRenderTargetCube(glm::ivec2(256), true);
 
 	mBox = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
