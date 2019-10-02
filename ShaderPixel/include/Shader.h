@@ -12,11 +12,15 @@ enum Feature {
 	AlphaTexture = 1 << 0,
 	Masked = 1 << 1,
 	Dithered = 1 << 2,
-	Count = 3 // update by hand?? not cool :C
+	ShadowPass = 1 << 3,
+	Count = 4 // update by hand?? not cool :C
 };
+
+const GLuint GLOBAL_BLOCK_BINDING_LOCATION = 0;
 
 class Shader
 {
+
 	unsigned int				mRendererID;
 	std::map<std::string, int>	mLocationCache;
 public:

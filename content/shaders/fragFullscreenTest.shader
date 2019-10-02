@@ -1,12 +1,11 @@
 
 in vec2 UV;
 
-out vec3 color;
+out vec4 color;
 
 uniform sampler2D   uInputTex;
-uniform float       uTime;
+uniform float       uAlpha = 1.0;
 
 void main(){
-    //color = texture( uInputTex, UV + 0.005*vec2( sin(uTime+1024.0*UV.x),cos(uTime+768.0*UV.y)) ).xyz;
-    color = texture( uInputTex, UV ).xyz;
+    color = vec4(texture( uInputTex, UV ).xyz, uAlpha);
 }

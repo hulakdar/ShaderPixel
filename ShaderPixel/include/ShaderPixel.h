@@ -23,17 +23,39 @@ public:
 	virtual void onScroll(float x, float y) override;
 	virtual ~ShaderPixel();
 private:
+
+	bool mEnvMapDirty = true;
+
+	void shadowPass();
+	void captureEnvMap();
+
 	ShaderID	mBox;
 	ShaderID	mFXAA;
 	ShaderID	mCloud;
 	ShaderID	mFullscreenTest;
+	ShaderID	mCubeMapTest;
+	ShaderID	mBrightnessFilter;
+	ShaderID	mBlur;
+	ShaderID	mBloom;
+
 
 	RenderTarget mSceneColorMS;
 	RenderTarget mShadow;
 	RenderTarget mEnvProbe;
-
-	enum { Ping, Pong } mCurrent = Ping;
 	RenderTarget mPingPong[2];
+	//RenderTarget mHalfRes;
+	//RenderTarget mQuarterRes;
+	//RenderTarget mEightsRes;
+
+	struct GlobalUniformBuffer {
+		glm::mat4	lightView;
+		glm::vec3	lightDir;
+		glm::vec3	cameraPosition;
+		float		time;
+	} mGlobalBuffer;
+
+	GLuint		mGlobalBufferID;
+
 
 	float		mAspectRatio = 1.f;
 	float		mSpeed = 1.f;

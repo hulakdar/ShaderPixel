@@ -30,7 +30,6 @@ class ShaderManager
 {
 	friend Shader;
 private:
-	const GLuint GLOBAL_BLOCK_BINDING_LOCATION = 0;
 	std::string mVersion = "#version 410 core\n";
 	std::string mPrefix;
 	std::map<std::string, Shader::Handle>	mHandleMap;

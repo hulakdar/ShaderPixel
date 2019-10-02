@@ -1,8 +1,6 @@
 
 uniform sampler2D uInputTex; // 0
 uniform vec2 rcpFrame;
-uniform float FXAA_SPAN_MAX = 8.0;
-uniform float FXAA_REDUCE_MUL = 1.0/8.0;
 
 in vec4 FragPos;
 out vec4 FragColor;
@@ -18,8 +16,8 @@ vec3 FxaaPixelShader(
 {   
 /*---------------------------------------------------------*/
     #define FXAA_REDUCE_MIN   (1.0/128.0)
-    //#define FXAA_REDUCE_MUL   (1.0/8.0)
-    //#define FXAA_SPAN_MAX     8.0
+    #define FXAA_REDUCE_MUL   (1.0/8.0)
+    #define FXAA_SPAN_MAX     8.0
 /*---------------------------------------------------------*/
     vec3 rgbNW = FxaaTexLod0(tex, FragPos.zw).xyz;
     vec3 rgbNE = FxaaTexOff(tex, FragPos.zw, FxaaInt2(1,0), rcpFrame).xyz;

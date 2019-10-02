@@ -9,7 +9,7 @@ in vec3 FragPositionMS;
 in vec3 FragToCamDirMS;
 out vec4 FragColor;
 
-const uint EstimatorIterations = 32;
+const uint EstimatorIterations = 16;
 
 float DistanceEstimator(vec3 position)
 {
@@ -58,7 +58,7 @@ float DistanceEstimatorBulb(vec3 pos) {
 }
 
 const uint MaxRaySteps = 64;
-const float uMinimumDistance = 0.000001;
+const float uMinimumDistance = 0.00007;
 
 void trace(vec3 from, vec3 direction, out float AO, out float distance)
 {
@@ -71,7 +71,7 @@ void trace(vec3 from, vec3 direction, out float AO, out float distance)
 		if (distance < uMinimumDistance)
 			break;
 	}
-    if (totalDistance > 29)
+    if (totalDistance > 1600)
         discard;
 	AO = 1.f - float(steps)/MaxRaySteps;
     distance = totalDistance;
@@ -87,8 +87,8 @@ void main()
     float AO = 0;
     float distance = 0;
 	trace(start, dir, AO, distance);
-    AO = smoothstep(0.0,0.4,AO);
+    AO = smoothstep(0.0,0.7,AO);
 
     vec3 end = (start + dir * distance);
-	FragColor = vec4(AO * abs(sin(end)) , 1);
+	FragColor = vec4(AO * abs(sin(end) + abs(cos(end))), 1);
 }

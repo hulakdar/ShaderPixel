@@ -34,7 +34,7 @@ namespace Renderer
 	void Init();
 	void Update(int winX, int winY);
 	void Clear();
-	void Draw(Scene& scene, Shader* shader, glm::mat4 viewProjection);
+	void Draw(Scene& scene, glm::mat4 viewProjection, FeatureMask features = 0);
 	void Draw(Mesh* Mesh);
 	void Draw(const VertexArray& Va, const IndexBuffer& Ib);
 	void Draw(const VertexArray& Va, unsigned int Count);

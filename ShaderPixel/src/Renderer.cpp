@@ -143,7 +143,7 @@ namespace Renderer
 		GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	}
 
-	void Draw(Scene& scene, Shader* inputShader, glm::mat4 viewProjection)
+	void Draw(Scene& scene, glm::mat4 viewProjection, FeatureMask customFeatures /* = 0 */)
 	{
 		for (auto& model : scene.models)
 		{
@@ -156,34 +156,32 @@ namespace Renderer
 				{
 					if (material->blendMode == BlendMode::Opaque)
 					{
+						glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 						glEnable(GL_CULL_FACE);
-						glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE); // global or per draw call?
 					}
 					else
 					{
-						glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE); // global or per draw call?
+						glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 						glDisable(GL_CULL_FACE);
 					}
 
-					Shader* currentShader = inputShader;
 
-					// cache this? sort by this?
-					if (material->shaderOverride)
-						currentShader = Resources::GetShader(material->shaderOverride);
+					FeatureMask mask = material->features | customFeatures;
 
-					// just in case.  this should never trigger
-					if (!currentShader)
-						currentShader = inputShader;
+					ShaderID shaderID = Shader::GetShaderWithFeatures(mask);
+					Shader* currentShader = Resources::GetShader(shaderID);
 
 					if (currentShader)
 					{
 						ApplyMaterial(material, currentShader);
 						currentShader->SetUniform("uMVP", MVP);
+						currentShader->SetUniform("uShadow", 15); // hack. don't know how to set it properly
 						Draw(mesh);
 					}
 				}
 			}
 		}
+		glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 	}
 
 	void Draw(Mesh* mesh)

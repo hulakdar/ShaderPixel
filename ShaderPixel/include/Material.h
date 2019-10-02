@@ -18,6 +18,6 @@ enum class BlendMode : uint8_t
 struct Material
 {
 	BlendMode				blendMode = BlendMode::Opaque;
-	ShaderID				shaderOverride = 0;
+	FeatureMask				features = 0;
     std::vector<Uniform>    uniforms;
 };

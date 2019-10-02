@@ -53,6 +53,10 @@ static int CompileShader(unsigned int Type, const std::string& Filepath, const s
 	GLCall(glShaderSource(ShaderProgram, 1, &str, 0));
 	GLCall(glCompileShader(ShaderProgram));
 
+	GLuint blockIndex = glGetUniformBlockIndex(ShaderProgram, "global");
+	if (blockIndex != GL_INVALID_INDEX)
+		glUniformBlockBinding(ShaderProgram, blockIndex, GLOBAL_BLOCK_BINDING_LOCATION);
+
 	int result;
 	GLCall(glGetShaderiv(ShaderProgram, GL_COMPILE_STATUS, &result));
 	if (result == GL_FALSE)
@@ -114,6 +118,7 @@ static std::string ModifierFromMask(FeatureMask mask)
 		"#define ALPHA_TEXTURE 1\n",
 		"#define MASKED 1\n",
 		"#define DITHERED 1\n",
+		"#define SHADOW_PASS 1\n",
 	};
 
 	static_assert(ARRAY_COUNT(Modifiers) == Feature::Count);

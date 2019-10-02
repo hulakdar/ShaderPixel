@@ -13,11 +13,19 @@ out VS_OUT
 uniform mat4 uMVP;
 uniform mat4 uLightSpaceMatrix;
 
+layout(std140) uniform global
+{
+    mat4    lightView;
+    vec3    lightDir;
+    vec3    cameraPosition;
+    float   uTime;
+}           g;
+
 void main()
 {
 	gl_Position = uMVP * vPos;
 
 	vs_out.TexCoord = vUV;
 	vs_out.Normal = vNorm;
-    vs_out.FragPosLightSpace = uLightSpaceMatrix * vec4(vPos.xyz, 1.0);
+	vs_out.FragPosLightSpace = g.lightView * vec4(vPos.xyz, 1.0);
 }

@@ -1,4 +1,3 @@
-
 #define DITHER_16 1
 
 in VS_OUT
@@ -10,7 +9,14 @@ in VS_OUT
 
 out vec4 fragColor;
 
-uniform float uTime;
+layout(std140) uniform global
+{
+    mat4    lightView;
+    vec3    lightDir;
+    vec3    cameraPosition;
+    float   uTime;
+}           g;
+
 uniform sampler2D uDiffuse;
 uniform sampler2D uAlpha;
 uniform sampler2DShadow uShadow;
@@ -35,14 +41,14 @@ const uint ArrayBlueNoiseA16x16[64] = uint[](
 	0xf34e2875, 0xaf6c4019, 0x29f29c08, 0x41bda56e, // 14
 	0xc3a407ad, 0xbefb5c8c, 0xb6cf5676, 0x64880246  // 15
 );
-#endif
-
+#else
 const float limits[16] = float[](
 	0.0625, 0.5625, 0.1875, 0.6875,
 	0.8125, 0.3125, 0.9375, 0.4375,
 	0.25,	0.75,	0.125,	0.625,
 	0.9999,	0.5,	0.875,	0.375
 );
+#endif
 
 bool ditheredAlphaTest(float opacity)
 {
@@ -78,8 +84,6 @@ bool alphaTest(float a)
 #endif
 }
 
-uniform vec3 uLightDir = vec3(0.6f);
-
 float shadowCalculation(vec4 fragPosLightSpace)
 {
     // perform perspective divide
@@ -90,19 +94,19 @@ float shadowCalculation(vec4 fragPosLightSpace)
     float currentDepth = projCoords.z;
     //if (currentDepth > 1.f)
         //return 0.f;
-    float bias = 0.; // max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    float shadow = 0.0;
 
+    float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(uShadow, 0);
-    for(int x = -3; x <= 3; ++x)
+    float offsetSize = 1.2;
+    for(int x = -2; x <= 2; ++x)
     {
-        for(int y = -3; y <= 3; ++y)
+        for(int y = -2; y <= 2; ++y)
         {
-            float pcfDepth = texture(uShadow, projCoords + vec3(x, y, 0.f) * vec3(texelSize * 2.7, 1.f)); 
-            shadow += float(currentDepth - bias > pcfDepth);
+            float pcfDepth = texture(uShadow, projCoords + vec3(x, y, 0.f) * vec3(texelSize * offsetSize, 1.f)); 
+            shadow += float(currentDepth > pcfDepth);
         }    
     }
-    shadow *= 0.0202;
+    shadow *= 0.04;
     
     // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
      if(projCoords.z > 1.0)
@@ -118,7 +122,7 @@ void main()
 
 #if MASKED
 
-    float D = abs(dot(uLightDir, vs_out.Normal));
+	float D = abs(dot(g.lightDir, vs_out.Normal));
 
 	// get alpha from somewhere
 # if ALPHA_TEXTURE
@@ -128,8 +132,10 @@ void main()
 # endif
 	//
 
+#if !SHADOW_PASS
 	float currentDepth = gl_FragCoord.z;
 	a = min(a, currentDepth * currentDepth * currentDepth * currentDepth * currentDepth);
+#endif
 
 	if (alphaTest(smoothstep(.0, .9, a)))
 		discard;
@@ -137,13 +143,15 @@ void main()
 #else
 	// default opaque case
 	const float a = 1;
-    float D = max(dot(uLightDir, vs_out.Normal), 0.f);
+	float D = max(dot(g.lightDir, vs_out.Normal), 0.f);
 #endif
 
 
-    float shadow = shadowCalculation(vs_out.FragPosLightSpace);
+#if !SHADOW_PASS
+	float shadow = shadowCalculation(vs_out.FragPosLightSpace);
 
-    vec3 diffuse = albedo * D * shadow * 0.5;
-    vec3 ambient = albedo * 0.15;
+	vec3 diffuse = albedo * D * shadow * 0.8;
+	vec3 ambient = albedo * 0.25;
 	fragColor = vec4(diffuse + ambient, a);
+#endif
 }
