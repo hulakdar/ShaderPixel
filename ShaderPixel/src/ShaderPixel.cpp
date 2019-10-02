@@ -195,6 +195,13 @@ void ShaderPixel::update()
 		cloud->SetUniform("uVolume", (GLint)0);
 		cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
 
+		static float uDensity = 10.f;
+		static float uShadowDensity = 1.f;
+		ImGui::DragFloat("uDensity", &uDensity, 0.1);
+		ImGui::DragFloat("uShadowDensity", &uShadowDensity, 0.1);
+		cloud->SetUniform("uDensity", uDensity);
+		cloud->SetUniform("uShadowDensity", uShadowDensity);
+
 		Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
 		glDisable(GL_BLEND);
 		glDisable(GL_CULL_FACE);

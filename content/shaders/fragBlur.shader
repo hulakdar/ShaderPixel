@@ -14,8 +14,8 @@ void main(){
     vec3 result = texture(uInputTex, UV).rgb * weight[0]; // current fragment's contribution
     for(int i = 1; i < 3; i++)
     {
-        result += texture2D(uInputTex, vec2(UV) + uBlurDir * offset[i] * tex_offset).rgb * weight[i];
-        result += texture2D(uInputTex, vec2(UV) - uBlurDir * offset[i] * tex_offset).rgb * weight[i];
+        result += texture(uInputTex, vec2(UV) + uBlurDir * offset[i] * tex_offset).rgb * weight[i];
+        result += texture(uInputTex, vec2(UV) - uBlurDir * offset[i] * tex_offset).rgb * weight[i];
     }
     color = vec4(result, 1.0);
 }
