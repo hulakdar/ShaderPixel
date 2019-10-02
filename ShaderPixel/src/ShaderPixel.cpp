@@ -291,7 +291,7 @@ void ShaderPixel::update()
 		glActiveTexture(GL_TEXTURE0);
 		blurShader->SetUniform("uInputTex", 0);
 
-		static float blurOffset = 3.f;
+		static float blurOffset = 2.f;
 		ImGui::SliderFloat("blurOffset ", &blurOffset , 1, 10);
 
 		// 1 blur
