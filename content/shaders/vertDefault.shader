@@ -8,17 +8,21 @@ out VS_OUT
     vec2 TexCoord;
     vec3 Normal;
     vec4 FragPosLightSpace;
+    vec3 FragPosWorldSpace;
 }   vs_out;
 
 uniform mat4 uMVP;
+uniform mat4 uModelToWorld;
 uniform mat4 uLightSpaceMatrix;
 
 layout(std140) uniform global
 {
     mat4    lightView;
-    vec3    lightDir;
-    vec3    cameraPosition;
-    float   uTime;
+    vec4    lightDir;
+    vec4    cameraPosition;
+    float   time;
+    float   fogParamA;
+    float   fogParamB;
 }           g;
 
 void main()
@@ -27,5 +31,6 @@ void main()
 
 	vs_out.TexCoord = vUV;
 	vs_out.Normal = vNorm;
-	vs_out.FragPosLightSpace = g.lightView * vec4(vPos.xyz, 1.0);
+	vs_out.FragPosWorldSpace = vec3(uModelToWorld * vPos);
+	vs_out.FragPosLightSpace = g.lightView * vPos;
 }

@@ -41,7 +41,8 @@ public:
 	enum
 	{
 		Default = 0,
-		Cloud = 1
+		Cloud = 1,
+		Noise = 2,
 	};
 	
 	Texture(TextureData&);

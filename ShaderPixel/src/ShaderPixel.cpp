@@ -122,17 +122,23 @@ void ShaderPixel::update()
 
 	shadowPass();
 
-	mGlobalBuffer.cameraPosition = mCameraPosition;
+	static float fogParamA = .005f;
+	static float fogParamB = .009f;
+
+	ImGui::DragFloat("fogParamA",&fogParamA, 0.01);
+	ImGui::DragFloat("fogParamB",&fogParamB, 0.01);
+
+	glm::vec4 camvec4 = glm::vec4(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z, 1.f);
+	mGlobalBuffer.cameraPosition = camvec4;
 	mGlobalBuffer.time = float(glfwGetTime());
+	mGlobalBuffer.fogParamA = fogParamA;
+	mGlobalBuffer.fogParamB = fogParamB;
 
 	glBindBuffer(GL_UNIFORM_BUFFER, mGlobalBufferID);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlobalUniformBuffer), &mGlobalBuffer);
 
 	if (mEnvMapDirty)
-	{
 		captureEnvMap();
-		mEnvMapDirty = false;
-	}
 
 	setRenderTarget(&mSceneColorMS);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -197,8 +203,8 @@ void ShaderPixel::update()
 
 		static float uDensity = 10.f;
 		static float uShadowDensity = 1.f;
-		ImGui::DragFloat("uDensity", &uDensity, 0.1);
-		ImGui::DragFloat("uShadowDensity", &uShadowDensity, 0.1);
+		ImGui::DragFloat("uDensity", &uDensity, .1f);
+		ImGui::DragFloat("uShadowDensity", &uShadowDensity, .1f);
 		cloud->SetUniform("uDensity", uDensity);
 		cloud->SetUniform("uShadowDensity", uShadowDensity);
 
@@ -267,86 +273,16 @@ void ShaderPixel::update()
 
 		Renderer::DrawQuadFS();
 
-		// downsample ??
-		//glBindFramebuffer(GL_READ_FRAMEBUFFER, mPingPong[0].rendererID);
-		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mHalfRes.rendererID);    
-
-		//glBlitFramebuffer(0, 0, mPingPong[0].size.x, mPingPong[0].size.y, 
-		//				  0, 0, mHalfRes.size.x, mHalfRes.size.y,   
-		//				  GL_COLOR_BUFFER_BIT,						
-		//				  GL_LINEAR);
-
-		//glBindFramebuffer(GL_READ_FRAMEBUFFER, mHalfRes.rendererID);
-		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mQuarterRes.rendererID);    
-
-		//glBlitFramebuffer(0, 0, mHalfRes.size.x, mHalfRes.size.y,
-		//				  0, 0, mQuarterRes.size.x, mQuarterRes.size.y, 
-		//				  GL_COLOR_BUFFER_BIT,							
-		//				  GL_LINEAR);
-
-		//glBindFramebuffer(GL_READ_FRAMEBUFFER, mQuarterRes.rendererID);
-		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mEightsRes.rendererID);  
-
-		//glBlitFramebuffer(0, 0, mQuarterRes.size.x, mQuarterRes.size.y,
-		//				  0, 0, mEightsRes.size.x, mEightsRes.size.y,    
-		//				  GL_COLOR_BUFFER_BIT,							
-		//				  GL_LINEAR);
+		static bool bDownsampledBloom = false;
+		ImGui::Checkbox("bDownsampledBloom", &bDownsampledBloom);
 
 		Shader* blurShader = Resources::GetShader(mBlur);
-
 
 		glActiveTexture(GL_TEXTURE0);
 		blurShader->SetUniform("uInputTex", 0);
 
 		static float blurOffset = 2.f;
 		ImGui::SliderFloat("blurOffset ", &blurOffset , 1, 10);
-
-		// 1 blur
-		setRenderTarget(&mPingPong[0]);
-
-		glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
-		blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset ,0));
-		Renderer::DrawQuadFS();
-
-		setRenderTarget(&mPingPong[1]);
-
-		glBindTexture(GL_TEXTURE_2D, mPingPong[0].textures[0]);
-		blurShader->SetUniform("uBlurDir", glm::vec2(0,blurOffset ));
-		Renderer::DrawQuadFS();
-
-		// 2 blur
-		setRenderTarget(&mPingPong[0]);
-
-		glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
-		blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset ,0));
-		Renderer::DrawQuadFS();
-
-		setRenderTarget(&mPingPong[1]);
-
-		glBindTexture(GL_TEXTURE_2D, mPingPong[0].textures[0]);
-		blurShader->SetUniform("uBlurDir", glm::vec2(0,blurOffset ));
-		Renderer::DrawQuadFS();
-
-		setRenderTarget(&Renderer::viewport);
-
-		// 3 blur
-		setRenderTarget(&mPingPong[0]);
-
-		glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
-		blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset ,0));
-		Renderer::DrawQuadFS();
-
-		setRenderTarget(&mPingPong[1]);
-
-		glBindTexture(GL_TEXTURE_2D, mPingPong[0].textures[0]);
-		blurShader->SetUniform("uBlurDir", glm::vec2(0,blurOffset ));
-		Renderer::DrawQuadFS();
-
-		// apply bloom effect
-		setRenderTarget(&Renderer::viewport);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 		Shader* passthrough = Resources::GetShader(mFullscreenTest);
 		passthrough->Bind();
@@ -356,9 +292,203 @@ void ShaderPixel::update()
 		glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
 		passthrough->SetUniform("uInputTex", 0);
 		passthrough->SetUniform("uAlpha", alpha);
-		Renderer::DrawQuadFS();
 
-		glDisable(GL_BLEND);
+		if (bDownsampledBloom)
+		{
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, mPingPong[1].rendererID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mHalfRes[0].rendererID);
+
+			glBlitFramebuffer(0, 0, mPingPong[1].size.x, mPingPong[1].size.y,
+				0, 0, mHalfRes[0].size.x, mHalfRes[0].size.y,
+				GL_COLOR_BUFFER_BIT,
+				GL_LINEAR);
+
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, mHalfRes[0].rendererID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mQuarterRes[0].rendererID);
+
+			glBlitFramebuffer(0, 0, mHalfRes[0].size.x, mHalfRes[0].size.y,
+				0, 0, mQuarterRes[0].size.x, mQuarterRes[0].size.y,
+				GL_COLOR_BUFFER_BIT,
+				GL_LINEAR);
+
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, mQuarterRes[0].rendererID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mEightsRes[0].rendererID);
+
+			glBlitFramebuffer(0, 0, mQuarterRes[0].size.x, mQuarterRes[0].size.y,
+				0, 0, mEightsRes[0].size.x, mEightsRes[0].size.y,
+				GL_COLOR_BUFFER_BIT,
+				GL_LINEAR);
+
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, mEightsRes[0].rendererID);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mSixteenthsRes[0].rendererID);
+
+			glBlitFramebuffer(0, 0, mEightsRes[0].size.x, mEightsRes[0].size.y,
+				0, 0, mSixteenthsRes[0].size.x, mSixteenthsRes[0].size.y,
+				GL_COLOR_BUFFER_BIT,
+				GL_LINEAR);
+
+
+			// blur 1/16
+
+			// horizontally
+			setRenderTarget(&mSixteenthsRes[1]);
+			glBindTexture(GL_TEXTURE_2D, mSixteenthsRes[0].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(0, blurOffset));
+			Renderer::DrawQuadFS();
+
+			// vertically
+			setRenderTarget(&mSixteenthsRes[0]);
+			glBindTexture(GL_TEXTURE_2D, mSixteenthsRes[1].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset, 0));
+			Renderer::DrawQuadFS();
+
+			// blend 1/16 on 1/8
+			setRenderTarget(&mEightsRes[0]);
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+			passthrough->Bind();
+			glBindTexture(GL_TEXTURE_2D, mSixteenthsRes[0].textures[0]);
+			Renderer::DrawQuadFS();
+
+			glDisable(GL_BLEND);
+
+			// blur 1/8
+
+			// horizontally
+			setRenderTarget(&mEightsRes[1]);
+			glBindTexture(GL_TEXTURE_2D, mEightsRes[0].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(0, blurOffset));
+			Renderer::DrawQuadFS();
+
+			// vertically
+			setRenderTarget(&mEightsRes[0]);
+			glBindTexture(GL_TEXTURE_2D, mEightsRes[1].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset, 0));
+			Renderer::DrawQuadFS();
+
+			// blend 1/8 on 1/4
+			setRenderTarget(&mQuarterRes[0]);
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+			passthrough->Bind();
+			glBindTexture(GL_TEXTURE_2D, mEightsRes[0].textures[0]);
+			Renderer::DrawQuadFS();
+
+			glDisable(GL_BLEND);
+
+			// blur 1/4
+
+			// horizontally
+			setRenderTarget(&mQuarterRes[1]);
+			glBindTexture(GL_TEXTURE_2D, mQuarterRes[0].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(0, blurOffset));
+			Renderer::DrawQuadFS();
+
+			// vertically
+			setRenderTarget(&mQuarterRes[0]);
+			glBindTexture(GL_TEXTURE_2D, mQuarterRes[1].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset, 0));
+			Renderer::DrawQuadFS();
+
+			// blend 1/4 on 1/2
+			setRenderTarget(&mHalfRes[0]);
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+			passthrough->Bind();
+			glBindTexture(GL_TEXTURE_2D, mQuarterRes[0].textures[0]);
+			Renderer::DrawQuadFS();
+
+			glDisable(GL_BLEND);
+
+			// blur 1/2
+
+			// horizontally
+			setRenderTarget(&mHalfRes[1]);
+			glBindTexture(GL_TEXTURE_2D, mHalfRes[0].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(0, blurOffset));
+			Renderer::DrawQuadFS();
+
+			// vertically
+			setRenderTarget(&mHalfRes[0]);
+			glBindTexture(GL_TEXTURE_2D, mHalfRes[1].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset, 0));
+			glBindTexture(GL_TEXTURE_2D, mHalfRes[0].textures[0]);
+			Renderer::DrawQuadFS();
+
+			// blend 1/2 on Viewport
+			setRenderTarget(&Renderer::viewport);
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+			passthrough->Bind();
+			glBindTexture(GL_TEXTURE_2D, mHalfRes[0].textures[0]);
+			Renderer::DrawQuadFS();
+
+			glDisable(GL_BLEND);
+		}
+		else
+		{
+			// 1 blur
+			setRenderTarget(&mPingPong[0]);
+
+			glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset, 0));
+			Renderer::DrawQuadFS();
+
+			setRenderTarget(&mPingPong[1]);
+
+			glBindTexture(GL_TEXTURE_2D, mPingPong[0].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(0, blurOffset));
+			Renderer::DrawQuadFS();
+
+			// 2 blur
+			setRenderTarget(&mPingPong[0]);
+
+			glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset, 0));
+			Renderer::DrawQuadFS();
+
+			setRenderTarget(&mPingPong[1]);
+
+			glBindTexture(GL_TEXTURE_2D, mPingPong[0].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(0, blurOffset));
+			Renderer::DrawQuadFS();
+
+			setRenderTarget(&Renderer::viewport);
+
+			// 3 blur
+			setRenderTarget(&mPingPong[0]);
+
+			glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset, 0));
+			Renderer::DrawQuadFS();
+
+			setRenderTarget(&mPingPong[1]);
+
+			glBindTexture(GL_TEXTURE_2D, mPingPong[0].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(0, blurOffset));
+			Renderer::DrawQuadFS();
+
+			// apply bloom effect
+			setRenderTarget(&Renderer::viewport);
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+			glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
+			passthrough->SetUniform("uAlpha", alpha);
+			Renderer::DrawQuadFS();
+
+			glDisable(GL_BLEND);
+
+		}
 		
 		ImGui::EndGroup();
 	}
@@ -419,13 +549,19 @@ void ShaderPixel::shadowPass()
 	glActiveTexture(GL_TEXTURE15);
 	glBindTexture(GL_TEXTURE_2D, mShadow.textures[1]);
 
-	static const glm::vec3 LIGHT_DIR{ 0,0,1 };
+	static const glm::vec4 LIGHT_DIR{ 0,0,1,0 };
 
 	// scene
-	mGlobalBuffer.lightDir = glm::normalize(glm::inverse(glm::mat3(shadowView)) * LIGHT_DIR);
+	mGlobalBuffer.lightDir = glm::normalize(glm::inverse(shadowView) * LIGHT_DIR);
 	mGlobalBuffer.lightView = shadowTransform;
 	shadowPassDirty = false;
+	markEnvMapAsDirty();
+}
+
+void ShaderPixel::markEnvMapAsDirty()
+{
 	mEnvMapDirty = true;
+	mFaceIndex = 0;
 }
 
 void ShaderPixel::captureEnvMap()
@@ -434,46 +570,43 @@ void ShaderPixel::captureEnvMap()
 	AppMemory* mem = host->mMemory;
 	glCullFace(GL_BACK);
 
-	// capture cubemap
-	if (1)
+	setRenderTarget(&mEnvProbe);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	glm::vec3 targetVectors[6] = {
+		glm::vec3(1.0f, 0.0f, 0.0f),
+		glm::vec3(-1.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, -1.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f)
+	};
+	glm::vec3 upVectors[6] = {
+		glm::vec3(0.0f, -1.0f, 0.0f),
+		glm::vec3(0.0f, -1.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(0.0f, -1.0f, 0.0f),
+		glm::vec3(0.0f, -1.0f, 0.0f)
+	};
+
+	const static glm::vec3 probePosition{ 0, 400, 0 };
+
+	const float fov = 90.f;
+	glm::mat4 projection = glm::perspective(glm::radians(fov), 1.f, .1f, 9000.f);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_X + mFaceIndex, mEnvProbe.textures[RenderTarget::Color], 0);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glm::mat4 view = glm::lookAt(probePosition, probePosition + targetVectors[mFaceIndex], upVectors[mFaceIndex]);
+	Renderer::Draw(mem->scene, projection * view);
+
+	mFaceIndex++;
+	if (mFaceIndex >= 6)
 	{
-		setRenderTarget(&mEnvProbe);
-		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-		glm::vec3 targetVectors[6] = {
-			glm::vec3(1.0f, 0.0f, 0.0f),
-			glm::vec3(-1.0f, 0.0f, 0.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f),
-			glm::vec3(0.0f, -1.0f, 0.0f),
-			glm::vec3(0.0f, 0.0f, 1.0f),
-			glm::vec3(0.0f, 0.0f, -1.0f)
-		};
-		glm::vec3 upVectors[6] = {
-			glm::vec3(0.0f, -1.0f, 0.0f),
-			glm::vec3(0.0f, -1.0f, 0.0f),
-			glm::vec3(0.0f, 0.0f, 1.0f),
-			glm::vec3(0.0f, 0.0f, -1.0f),
-			glm::vec3(0.0f, -1.0f, 0.0f),
-			glm::vec3(0.0f, -1.0f, 0.0f)
-		};
-
-		const static glm::vec3 probePosition{ 0, 400, 0 };
-
-		static float fov = 90.f;
-
-		ImGui::SliderFloat("fov", &fov, 50.f, 180.f);
-		glm::mat4 projection = glm::perspective(glm::radians(fov), 1.f, .1f, 90000.f);
-
-		for (GLuint face = 0; face < 6; ++face)
-		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-				GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mEnvProbe.textures[RenderTarget::Color], 0);
-			glClear(GL_DEPTH_BUFFER_BIT);
-
-			glm::mat4 view = glm::lookAt(probePosition, probePosition + targetVectors[face], upVectors[face]);
-			Renderer::Draw(mem->scene, projection * view);
-		}
+		mFaceIndex = 0;
+		mEnvMapDirty = false;
 	}
-
 }
 
 void ShaderPixel::onMouseMove(float x, float y, float dX, float dY)
@@ -514,6 +647,8 @@ TextureData	LoadTextureData(const std::string& filename, int desiredComponentCou
 
 	std::string CompleteFilepath = Resources::BaseFilepath + filename;
 	LocalBuffer = stbi_load(CompleteFilepath.c_str(), &Size.x, &Size.y, &ComponentCount, desiredComponentCount);
+	if (desiredComponentCount)
+		ComponentCount = desiredComponentCount;
 	if (!LocalBuffer)
 		__debugbreak();
 	return { LocalBuffer, Size, ComponentCount };
@@ -640,6 +775,11 @@ void ShaderPixel::init(Host* host)
 	CloudTexture.Type = GL_TEXTURE_3D;
 	Resources::Textures.emplace_back(CloudTexture);
 
+	assert(Resources::Textures.size() == 2);
+	TextureData NoiseTexture = LoadTextureData("../content/PerlinNoise.png", 1);
+	CloudTexture.Type = GL_TEXTURE_2D;
+	Resources::Textures.emplace_back(CloudTexture);
+
 
 	// hack. need to figure out async shader compilation (look at how Textures are loaded. should be pretty similar)
 	Shader::GetShaderWithFeatures(7);
@@ -652,9 +792,14 @@ void ShaderPixel::init(Host* host)
 	mSceneColorMS = makeRenderTargetMultisampled(resolution, GL_RGB, 8);
 	mPingPong[0] = makeRenderTarget(resolution, GL_RGB, true);
 	mPingPong[1] = makeRenderTarget(resolution, GL_RGB, true);
-	//mHalfRes = makeRenderTarget(resolution/2, GL_RGB, true);
-	//mQuarterRes = makeRenderTarget(resolution/4, GL_RGB, true);
-	//mEightsRes = makeRenderTarget(resolution/8, GL_RGB, true);
+	mHalfRes[0] = makeRenderTarget(resolution/2, GL_RGB, true);
+	mHalfRes[1] = makeRenderTarget(resolution/2, GL_RGB, true);
+	mQuarterRes[0] = makeRenderTarget(resolution/4, GL_RGB, true);
+	mQuarterRes[1] = makeRenderTarget(resolution/4, GL_RGB, true);
+	mEightsRes[0] = makeRenderTarget(resolution/8, GL_RGB, true);
+	mEightsRes[1] = makeRenderTarget(resolution/8, GL_RGB, true);
+	mSixteenthsRes[0] = makeRenderTarget(resolution/16, GL_RGB, true);
+	mSixteenthsRes[1] = makeRenderTarget(resolution/16, GL_RGB, true);
 	mEnvProbe = makeRenderTargetCube(glm::ivec2(512), true);
 
 	GLCall(glGenBuffers(1, &mGlobalBufferID));

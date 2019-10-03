@@ -28,6 +28,7 @@ private:
 
 	void shadowPass();
 	void captureEnvMap();
+	void markEnvMapAsDirty();
 
 	ShaderID	mBox;
 	ShaderID	mFXAA;
@@ -41,17 +42,22 @@ private:
 
 	RenderTarget mSceneColorMS;
 	RenderTarget mShadow;
-	RenderTarget mEnvProbe;
 	RenderTarget mPingPong[2];
-	//RenderTarget mHalfRes;
-	//RenderTarget mQuarterRes;
-	//RenderTarget mEightsRes;
+	RenderTarget mHalfRes[2];
+	RenderTarget mQuarterRes[2];
+	RenderTarget mEightsRes[2];
+	RenderTarget mSixteenthsRes[2];
+
+	RenderTarget mEnvProbe;
+	int	mFaceIndex = 0;
 
 	struct GlobalUniformBuffer {
 		glm::mat4	lightView;
-		glm::vec3	lightDir;
-		glm::vec3	cameraPosition;
+		glm::vec4	lightDir;
+		glm::vec4	cameraPosition;
 		float		time;
+		float		fogParamA;
+		float		fogParamB;
 	} mGlobalBuffer;
 
 	GLuint		mGlobalBufferID;

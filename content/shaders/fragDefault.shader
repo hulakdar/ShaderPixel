@@ -5,6 +5,7 @@ in VS_OUT
     vec2 TexCoord;
     vec3 Normal;
     vec4 FragPosLightSpace;
+    vec3 FragPosWorldSpace;
 }   vs_out;
 
 out vec4 fragColor;
@@ -12,9 +13,11 @@ out vec4 fragColor;
 layout(std140) uniform global
 {
     mat4    lightView;
-    vec3    lightDir;
-    vec3    cameraPosition;
-    float   uTime;
+    vec4    lightDir;
+    vec4    cameraPosition;
+    float   time;
+    float   fogParamA;
+    float   fogParamB;
 }           g;
 
 uniform sampler2D uDiffuse;
@@ -115,6 +118,19 @@ float shadowCalculation(vec4 fragPosLightSpace)
     return shadow;
 }
 
+vec3 applyFog( in vec3  rgb,      // original color of the pixel
+               in float distance, // camera to point distance
+               in vec3  rayOri,   // camera position
+               in vec3  rayDir )  // camera to point vector
+{
+    float c = g.fogParamA;
+    float b = g.fogParamB;
+    float fogAmount = c * exp(-rayOri.y*b) * (1.0-exp( -distance*rayDir.y*b ))/rayDir.y;
+    vec3  fogColor  = vec3(0.5,0.6,0.7);
+    fogAmount = clamp(fogAmount, 0.0, 1.0);
+    return mix( rgb, fogColor, fogAmount );
+}
+
 void main()
 {
 	vec4 albedo_a = texture(uDiffuse, vs_out.TexCoord);
@@ -122,7 +138,7 @@ void main()
 
 #if MASKED
 
-	float D = abs(dot(g.lightDir, vs_out.Normal));
+	float D = abs(dot(g.lightDir.xyz, vs_out.Normal));
 
 	// get alpha from somewhere
 # if ALPHA_TEXTURE
@@ -143,7 +159,7 @@ void main()
 #else
 	// default opaque case
 	const float a = 1;
-	float D = max(dot(g.lightDir, vs_out.Normal), 0.f);
+	float D = max(dot(g.lightDir.xyz, vs_out.Normal), 0.f);
 #endif
 
 
@@ -152,6 +168,12 @@ void main()
 
 	vec3 diffuse = albedo * D * shadow * 0.8;
 	vec3 ambient = albedo * 0.25;
-	fragColor = vec4(diffuse + ambient, a);
+    vec3 finalColor = applyFog(
+        diffuse + ambient,
+        distance(vs_out.FragPosWorldSpace, g.cameraPosition.xyz),
+        g.cameraPosition.xyz - vec3(0,300,0),
+        normalize(vs_out.FragPosWorldSpace - g.cameraPosition.xyz)
+    );
+	fragColor = vec4(finalColor, a);
 #endif
 }
