@@ -77,23 +77,14 @@ namespace Renderer
 	static VertexArray	Cube;
 	static VertexBuffer CubeBuffer;
 
-	static ShaderID	FXAAID;
-	static ShaderID	MandelbrotID;
-
 	void Init()
 	{
 		GLCall(glEnable(GL_DEPTH_TEST));
 		stbi_set_flip_vertically_on_load(true);
 		glEnable(GL_MULTISAMPLE); //need?
 
-		assert(Resources::Shaders.size() == 0);
 		assert(Resources::Textures.size() == 0);
-		Resources::Shaders.emplace_back(0); // default shader
 		Resources::Textures.emplace_back();// default texture
-
-		Resources::Shaders.emplace_back(
-		"../content/shaders/vertDefault.shader",
-		"../content/shaders/fragShadow.shader");
 
 		{
 			QuadBuffer.Init(QuadData, sizeof(QuadData));
@@ -112,17 +103,6 @@ namespace Renderer
 			vbl.Push<float>(3);
 			Cube.AddBuffer(CubeBuffer, vbl);
 		}
-
-		FXAAID = Resources::Shaders.size();
-		Resources::Shaders.emplace_back(
-		"../content/shaders/vertFXAA.shader",
-		"../content/shaders/fragFXAA.shader");
-	
-
-		MandelbrotID = Resources::Shaders.size();
-		Resources::Shaders.emplace_back(
-		"../content/shaders/vertWorldSpace.shader",
-		"../content/shaders/fragMandelbrot.shader");
 	}
 
 	void Update(int winX, int winY)
@@ -230,32 +210,5 @@ namespace Renderer
 		shader->SetUniform("uMVP", MVP);
 		Cube.Bind();
 		GLCall(glDrawArrays(GL_TRIANGLES, 0, ARRAY_COUNT(CubeData)));
-	}
-
-	void DrawMandelbrot(glm::vec3 cameraPosition, glm::mat4 viewProjection)
-	{
-		Shader *mandel = Resources::GetShader(MandelbrotID);
-
-		static glm::vec3 QuadPos{ -50,140,-263 };
-		static glm::vec2 QuadScale{ 145,111 };
-		static glm::vec2 QuadPos2 = glm::vec2(QuadPos.x, QuadPos.z);
-
-		static glm::vec2 MandelPos{ 0,0 };
-		static float MandelScale{ 2 };
-		static float MandelIter{ 20 };
-
-		glm::vec2 cameraPos2 = glm::vec2(cameraPosition.x, cameraPosition.z);
-		if (glm::length(cameraPos2 - QuadPos2) < 150)
-		{
-			ImGui::DragFloat2("MandelPos", &MandelPos[0], 0.001f);
-			ImGui::DragFloat("MandelScale", &MandelScale, 0.0001f);
-			ImGui::DragFloat("MandelIter", &MandelIter);
-		}
-		mandel->Bind();
-		mandel->SetUniform("uCenter", MandelPos);
-		mandel->SetUniform("uScale", MandelScale);
-		mandel->SetUniform("uIter", MandelIter);
-
-		Renderer::DrawQuadWS(QuadPos, QuadScale, mandel, viewProjection);
 	}
 }

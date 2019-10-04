@@ -145,44 +145,9 @@ void ShaderPixel::update()
 
 	glCullFace(GL_BACK);
 	Renderer::Draw(mem->scene, viewProjection);
-	if (1)
-		Renderer::DrawMandelbrot(mCameraPosition, viewProjection);
 
-	// Mandelbox
-	if (1)
-	{
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT);
-		Shader* manbox = Resources::GetShader(mBox);
-
-		static glm::vec3 boxPos{ 487, 142, 144 };
-		ImGui::DragFloat3("Mandelbox position", &boxPos[0]);
-		static float boxScale = 1.1f;
-		ImGui::DragFloat("Mandelbox scale", &boxScale, 0.1f);
-
-		static float uInvDistThreshold = 0;
-		ImGui::SliderFloat("uInvDistThreshold", &uInvDistThreshold, 0.000001f, .2f);
-		manbox->SetUniform("uInvDistThreshold", uInvDistThreshold);
-
-		manbox->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
-
-		Renderer::DrawCubeWS(boxPos, boxScale, manbox, viewProjection);
-	}
-
-	// cube
-	if (1)
-	{
-		Shader* shader = Resources::GetShader(mCubeMapTest);
-
-		glm::vec3 boxPos{ 100, 150,0 };
-		float boxScale = 5;
-
-		Texture* CloudTexture = Resources::GetTexture(Texture::Cloud);
-		CloudTexture->Bind();
-		shader->SetUniform("uInputTex", (GLint)0);
-
-		Renderer::DrawCubeWS(boxPos, boxScale, shader, viewProjection);
-	}
+	drawMandelbrot(viewProjection);
+	drawMandelbox(viewProjection);
 
 	// cloud
 	if (1)
@@ -571,7 +536,6 @@ void ShaderPixel::captureEnvMap()
 	glCullFace(GL_BACK);
 
 	setRenderTarget(&mEnvProbe);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glm::vec3 targetVectors[6] = {
 		glm::vec3(1.0f, 0.0f, 0.0f),
 		glm::vec3(-1.0f, 0.0f, 0.0f),
@@ -808,6 +772,12 @@ void ShaderPixel::init(Host* host)
 		&mGlobalBuffer, GL_DYNAMIC_DRAW));
 	GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 0, mGlobalBufferID));
 
+
+	mMandelbrot = Resources::Shaders.size();
+	Resources::Shaders.emplace_back(
+	"../content/shaders/vertWorldSpace.shader",
+	"../content/shaders/fragMandelbrot.shader");
+
 	mBox = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
 	"../content/shaders/vertWorldSpace.shader",
@@ -880,6 +850,53 @@ void ShaderPixel::init(Host* host)
 	// undo the base path change
 	std::swap(OldPath, Resources::BaseFilepath);
 	Resources::FlushTextureData();
+}
+
+void ShaderPixel::drawMandelbox(glm::mat4 viewProjection)
+{
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	Shader* manbox = Resources::GetShader(mBox);
+
+	static glm::vec3 boxPos{ 487, 142, 144 };
+	ImGui::DragFloat3("Mandelbox position", &boxPos[0]);
+	static float boxScale = 1.1f;
+	ImGui::DragFloat("Mandelbox scale", &boxScale, 0.1f);
+
+	static float uInvDistThreshold = 0;
+	ImGui::SliderFloat("uInvDistThreshold", &uInvDistThreshold, 0.000001f, .2f);
+	manbox->SetUniform("uInvDistThreshold", uInvDistThreshold);
+
+	manbox->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
+
+	Renderer::DrawCubeWS(boxPos, boxScale, manbox, viewProjection);
+}
+
+void ShaderPixel::drawMandelbrot(glm::mat4 viewProjection)
+{
+	Shader *mandel = Resources::GetShader(mMandelbrot);
+
+	static glm::vec3 QuadPos{ -50,140,-263 };
+	static glm::vec2 QuadScale{ 145,111 };
+	static glm::vec2 QuadPos2 = glm::vec2(QuadPos.x, QuadPos.z);
+
+	static glm::vec2 MandelPos{ 0,0 };
+	static float MandelScale{ 2 };
+	static float MandelIter{ 20 };
+
+	glm::vec2 cameraPos2 = glm::vec2(mCameraPosition.x, mCameraPosition.z);
+	if (glm::distance(cameraPos2, QuadPos2) < 450)
+	{
+		ImGui::DragFloat2("MandelPos", &MandelPos[0], 0.001f);
+		ImGui::DragFloat("MandelScale", &MandelScale, 0.0001f);
+		ImGui::DragFloat("MandelIter", &MandelIter);
+	}
+	mandel->Bind();
+	mandel->SetUniform("uCenter", MandelPos);
+	mandel->SetUniform("uScale", MandelScale);
+	mandel->SetUniform("uIter", MandelIter);
+
+	Renderer::DrawQuadWS(QuadPos, QuadScale, mandel, viewProjection);
 }
 
 void ShaderPixel::deinit()

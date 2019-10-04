@@ -29,6 +29,8 @@ private:
 	void shadowPass();
 	void captureEnvMap();
 	void markEnvMapAsDirty();
+	void drawMandelbrot(glm::mat4 viewProjection);
+	void drawMandelbox(glm::mat4 viewProjection);
 
 	ShaderID	mBox;
 	ShaderID	mFXAA;
@@ -38,6 +40,7 @@ private:
 	ShaderID	mBrightnessFilter;
 	ShaderID	mBlur;
 	ShaderID	mBloom;
+	ShaderID	mMandelbrot;
 
 
 	RenderTarget mSceneColorMS;
