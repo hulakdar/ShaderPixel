@@ -17,6 +17,7 @@
 #include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
+#include <algorithm>
 
 Host*& staticHost()
 {
