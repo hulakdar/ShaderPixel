@@ -23,7 +23,7 @@ IncludeDir["TinyObjLoader"] = "vendor/tinyobjloader"
 IncludeDir["assimp"] = "vendor/assimp"
 
 group "Dependencies"
-	include "vendor/GLFW"
+	--- include "vendor/GLFW"
 	include "vendor/Glad"
 	include "vendor/"
 group ""
