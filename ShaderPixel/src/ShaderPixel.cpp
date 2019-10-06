@@ -130,12 +130,6 @@ void ShaderPixel::update()
 
 	shadowPass();
 
-	static float fogParamA = .005f;
-	static float fogParamB = .009f;
-
-	ImGui::DragFloat("fogParamA",&fogParamA, 0.01);
-	ImGui::DragFloat("fogParamB",&fogParamB, 0.01);
-
 	glm::vec4 camvec4 = glm::vec4(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z, 1.f);
 	mGlobalBuffer.cameraPosition = camvec4;
 	mGlobalBuffer.time = float(mCurrentTime);
