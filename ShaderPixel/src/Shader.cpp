@@ -66,7 +66,7 @@ static int CompileShader(unsigned int Type, const std::string& Filepath, const s
 		GLCall(glGetShaderInfoLog(ShaderProgram, result, &result, message));
 		std::cerr << "Failed to compile " << (Type == GL_FRAGMENT_SHADER ? "fragment" : "vertex") << " shader:" << message << std::endl;
 		GLCall(glDeleteShader(ShaderProgram));
-		__debugbreak();
+		//__debugbreak();
 		return (0);
 	}
 	return ShaderProgram;
@@ -87,7 +87,7 @@ static unsigned int CreateShader(unsigned int Vs, unsigned int Fs)
 		{
 			glGetProgramInfoLog(Program, 512, nullptr, errText);
 			std::cout << errText << '\n';
-			__debugbreak();
+			//__debugbreak();
 		}
 	}
 
@@ -121,7 +121,7 @@ static std::string ModifierFromMask(FeatureMask mask)
 		"#define SHADOW_PASS 1\n",
 	};
 
-	static_assert(ARRAY_COUNT(Modifiers) == Feature::Count);
+	static_assert(ARRAY_COUNT(Modifiers) == Feature::Count, "Modifier count != Feature count");
 
 	std::string result;
 	for (int i = 0; i < ARRAY_COUNT(Modifiers); i++)

@@ -33,7 +33,7 @@ project "ShaderPixel"
 	location "ShaderPixel"
 	kind "StaticLib"
 	language "C++"
-	cppdialect "C++17"
+	cppdialect "C++14"
 	--- staticruntime "on"
 
    
@@ -41,8 +41,6 @@ project "ShaderPixel"
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
 	defines {
-		"IMGUI_API=__declspec(dllimport)", 
-		"IMGUI_IMPL_API=", 
 		"IMGUI_IMPL_OPENGL_LOADER_GLAD"
 	} 
 
@@ -69,15 +67,18 @@ project "ShaderPixel"
 
 	links 
 	{ 
-		"Glad",
-		"ImGui",
 		--"ImGuiImplGL",
-		"TinyObjLoader",
-		"opengl32.lib"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
+		defines {
+			"IMGUI_API=__declspec(dllimport)", 
+			"IMGUI_IMPL_API="
+		}
+		links {
+		"opengl32.lib"
+		}
 
 	filter "configurations:Debug"
 		defines { "DEBUG" }
@@ -97,7 +98,7 @@ project "Host"
 	location "Host"
 	kind "ConsoleApp"
 	language "C++"
-	cppdialect "C++17"
+	cppdialect "C++14"
    
 	targetdir ("bin/ShaderPixel")
 	objdir ("bin-int/" .. outputdir .. "/ShaderPixel")
@@ -126,9 +127,19 @@ project "Host"
 	{ 
 		"GLFW",
 		"ShaderPixel",
-        "ImGui"
+		"TinyObjLoader",
+		"Glad",
+		"ImGui"
         --, "ImGuiImplGL"
 	}
+
+	filter "system:macosx"
+		links { 
+			"Cocoa.framework",
+			"OpenGL.framework",
+			"CoreVideo.framework",
+			"IOKit.framework"
+		}
 
 	filter "system:windows"
 		systemversion "latest"

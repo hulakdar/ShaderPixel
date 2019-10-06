@@ -4,7 +4,9 @@
 #include <iostream>
 #include <fstream>
 #include <imgui_impl_glfw.h>
-#include <windows.h>
+#ifdef _MSC_VER
+# include <windows.h>
+#endif
 #include <assert.h>
 //#include "Application.h"
 #include "ShaderPixel.h"

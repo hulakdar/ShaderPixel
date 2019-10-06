@@ -1,5 +1,3 @@
-#pragma once
-
 #include "Wrapper.h"
 #include <glad/glad.h>
 #include <string>

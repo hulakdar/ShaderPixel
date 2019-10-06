@@ -41,7 +41,7 @@ RenderTarget makeRenderTargetCube(glm::ivec2 size, bool needsDepth)
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE)
-		__debugbreak();
+		;//__debugbreak();
 
 	GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
@@ -75,7 +75,7 @@ RenderTarget makeRenderTargetMultisampled(glm::ivec2 size, GLenum colorFormat, i
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE)
-		__debugbreak();
+		;//__debugbreak();
 
 	GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
@@ -107,7 +107,7 @@ RenderTarget makeRenderTargetShadow(glm::ivec2 size)
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE)
-		__debugbreak();
+		;//__debugbreak();
 
 	GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
@@ -149,7 +149,7 @@ RenderTarget makeRenderTarget(glm::ivec2 size, GLenum colorFormat, bool needsDep
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE)
-		__debugbreak();
+		;//__debugbreak();
 
 	GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
