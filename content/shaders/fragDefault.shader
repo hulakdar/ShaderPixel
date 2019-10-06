@@ -1,5 +1,22 @@
 #define DITHER_16 1
 
+#ifndef SHADOW_PASS
+#define SHADOW_PASS 0
+#endif
+
+#ifndef MASKED
+#define MASKED 0
+#endif
+
+#ifndef ALPHA_TEXTURE
+#define ALPHA_TEXTURE 0
+#endif
+
+#ifndef DITHERED
+#define DITHERED 0
+#endif
+
+
 in VS_OUT
 {
     vec2 TexCoord;
@@ -69,7 +86,7 @@ bool ditheredAlphaTest(float opacity)
 	uint entry = index / 4;
 	uint byteIndex = index % 4;
 	uint four = ArrayBlueNoiseA16x16[entry];
-	uint byte = (four >> (byteIndex * 8)) & 0xff;
+	uint byte = (four >> (byteIndex * 8)) & uint(0xff);
 	float limit = byte / 255.0f;
 #else
     float limit = limits[index];

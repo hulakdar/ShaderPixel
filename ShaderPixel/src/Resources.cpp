@@ -2,7 +2,7 @@
 
 namespace Resources {
 
-	std::string				BaseFilepath = "../content/";
+	std::string				BaseFilepath = "content/";
 	std::vector<Mesh>		Meshes;
 	std::vector<Texture>	Textures;
 	std::vector<Material>	Materials;

@@ -1,7 +1,8 @@
 #include "ShaderPixel.h"
 #include "Host.h"
 #include "Resources.h"
-#include "Wrapper.h"
+#include "Collision.h"
+#include "Utility.h"
 
 #include <iostream>
 #include <thread>
@@ -16,7 +17,6 @@
 #include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
-#include "Collision.h"
 
 Host*& staticHost()
 {
@@ -52,9 +52,16 @@ void ShaderPixel::update()
 
 	static float Near = 1;
 	static float Far = 90000;
-
 	ImGui::SliderFloat("Near", &Near, 0.1f, 3.f);
 	ImGui::SliderFloat("Far", &Far, 6.f, 90000.f);
+
+	double lastTime = mCurrentTime;
+
+	mCurrentTime = glfwGetTime();
+
+	float deltaTime = float(mCurrentTime - lastTime);
+
+	ImGui::Text("%f", deltaTime);
 
 	glm::mat4 cameraRotation = glm::rotate(
 		glm::rotate(glm::mat4(1),
@@ -147,7 +154,11 @@ void ShaderPixel::update()
 	Renderer::Draw(mem->scene, viewProjection);
 
 	drawMandelbrot(viewProjection);
-	drawMandelbox(viewProjection);
+
+	static glm::vec3 manboxPos{ 487, 142, 144 };
+	static float manboxScale = 1.1f;
+
+	drawMandelbox(manboxPos, manboxScale, viewProjection);
 
 	// cloud
 	if (1)
@@ -238,16 +249,13 @@ void ShaderPixel::update()
 
 		Renderer::DrawQuadFS();
 
-		static bool bDownsampledBloom = false;
+		static bool bDownsampledBloom = true;
 		ImGui::Checkbox("bDownsampledBloom", &bDownsampledBloom);
 
 		Shader* blurShader = Resources::GetShader(mBlur);
 
 		glActiveTexture(GL_TEXTURE0);
 		blurShader->SetUniform("uInputTex", 0);
-
-		static float blurOffset = 2.f;
-		ImGui::SliderFloat("blurOffset ", &blurOffset , 1, 10);
 
 		Shader* passthrough = Resources::GetShader(mFullscreenTest);
 		passthrough->Bind();
@@ -257,6 +265,8 @@ void ShaderPixel::update()
 		glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
 		passthrough->SetUniform("uInputTex", 0);
 		passthrough->SetUniform("uAlpha", alpha);
+
+		static float blurOffset = 1.f;
 
 		if (bDownsampledBloom)
 		{
@@ -386,14 +396,41 @@ void ShaderPixel::update()
 			glBindTexture(GL_TEXTURE_2D, mHalfRes[0].textures[0]);
 			Renderer::DrawQuadFS();
 
-			// blend 1/2 on Viewport
-			setRenderTarget(&Renderer::viewport);
+			// blend 1/2 on 1/1
+			setRenderTarget(&mPingPong[1]);
 
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 			passthrough->Bind();
 			glBindTexture(GL_TEXTURE_2D, mHalfRes[0].textures[0]);
+			Renderer::DrawQuadFS();
+
+			glDisable(GL_BLEND);
+
+			// blur 1/1
+
+			// horizontally
+			setRenderTarget(&mPingPong[0]);
+			glBindTexture(GL_TEXTURE_2D, mPingPong[0].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(0, blurOffset));
+			Renderer::DrawQuadFS();
+
+			// vertically
+			setRenderTarget(&mPingPong[1]);
+			glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
+			blurShader->SetUniform("uBlurDir", glm::vec2(blurOffset, 0));
+			glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
+			Renderer::DrawQuadFS();
+
+			// blend 1/1 on viewport
+			setRenderTarget(&Renderer::viewport);
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+			passthrough->Bind();
+			glBindTexture(GL_TEXTURE_2D, mPingPong[1].textures[0]);
 			Renderer::DrawQuadFS();
 
 			glDisable(GL_BLEND);
@@ -610,11 +647,14 @@ TextureData	LoadTextureData(const std::string& filename, int desiredComponentCou
 	int			ComponentCount;
 
 	std::string CompleteFilepath = Resources::BaseFilepath + filename;
+	std::replace(CompleteFilepath.begin(), CompleteFilepath.end(), '\\', '/');
 	LocalBuffer = stbi_load(CompleteFilepath.c_str(), &Size.x, &Size.y, &ComponentCount, desiredComponentCount);
 	if (desiredComponentCount)
 		ComponentCount = desiredComponentCount;
 	if (!LocalBuffer)
-		;//__debugbreak();
+	{
+		BREAK();
+	}
 	return { LocalBuffer, Size, ComponentCount };
 }
 
@@ -733,14 +773,14 @@ void ShaderPixel::init(Host* host)
 	Renderer::Init();
 	assert(Resources::Textures.size() == 1);
 	stbi_set_flip_vertically_on_load(false);
-	TextureData CloudTexture = LoadTextureData("../content/VolumeCloud.tga", 1);
+	TextureData CloudTexture = LoadTextureData("VolumeCloud.tga", 1);
 	stbi_set_flip_vertically_on_load(true);
 	CloudTexture.Slices = 12;
 	CloudTexture.Type = GL_TEXTURE_3D;
 	Resources::Textures.emplace_back(CloudTexture);
 
 	assert(Resources::Textures.size() == 2);
-	TextureData NoiseTexture = LoadTextureData("../content/PerlinNoise.png", 1);
+	TextureData NoiseTexture = LoadTextureData("PerlinNoise.png", 1);
 	CloudTexture.Type = GL_TEXTURE_2D;
 	Resources::Textures.emplace_back(CloudTexture);
 
@@ -775,57 +815,57 @@ void ShaderPixel::init(Host* host)
 
 	mMandelbrot = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertWorldSpace.shader",
-	"../content/shaders/fragMandelbrot.shader");
+	"shaders/vertWorldSpace.shader",
+	"shaders/fragMandelbrot.shader");
 
 	mBox = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertWorldSpace.shader",
-	"../content/shaders/fragMandelbox.shader");
+	"shaders/vertWorldSpace.shader",
+	"shaders/fragMandelbox.shader");
 
 	mCloud = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertWorldSpace.shader",
-	"../content/shaders/fragCloud.shader");
+	"shaders/vertWorldSpace.shader",
+	"shaders/fragCloud.shader");
 
 	mFXAA = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertFXAA.shader",
-	"../content/shaders/fragFXAA.shader");
+	"shaders/vertFXAA.shader",
+	"shaders/fragFXAA.shader");
 
 	mBrightnessFilter = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertFullscreen.shader",
-	"../content/shaders/fragBrightFilter.shader");
+	"shaders/vertFullscreen.shader",
+	"shaders/fragBrightFilter.shader");
 
 	mBloom = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertFullscreen.shader",
-	"../content/shaders/fragBloom.shader");
+	"shaders/vertFullscreen.shader",
+	"shaders/fragBloom.shader");
 
 	mBlur = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertFullscreen.shader",
-	"../content/shaders/fragBlur.shader");
+	"shaders/vertFullscreen.shader",
+	"shaders/fragBlur.shader");
 
 	mFullscreenTest = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertFullscreen.shader",
-	"../content/shaders/fragFullscreenTest.shader");
+	"shaders/vertFullscreen.shader",
+	"shaders/fragFullscreenTest.shader");
 
 	mCubeMapTest = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
-	"../content/shaders/vertWorldSpace.shader",
-	"../content/shaders/fragReadCubemap.shader");
+	"shaders/vertWorldSpace.shader",
+	"shaders/fragReadCubemap.shader");
 
 	Scene &scene = host->mMemory->scene;
 
 	tinyobj::ObjReader objReader;
 	tinyobj::ObjReaderConfig config;
 	config.vertex_color = false;
-	objReader.ParseFromFile("../content/sponza/sponza.obj", config);
+	objReader.ParseFromFile(Resources::BaseFilepath + "sponza/sponza.obj", config);
 
-	std::string OldPath = "../content/sponza/";
+	std::string OldPath = Resources::BaseFilepath + "sponza/";
 
 	std::swap(OldPath, Resources::BaseFilepath);
 	assert(objReader.Valid());
@@ -852,16 +892,12 @@ void ShaderPixel::init(Host* host)
 	Resources::FlushTextureData();
 }
 
-void ShaderPixel::drawMandelbox(glm::mat4 viewProjection)
+void ShaderPixel::drawMandelbox(glm::vec3 boxPos, float boxScale , glm::mat4 viewProjection)
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 	Shader* manbox = Resources::GetShader(mBox);
 
-	static glm::vec3 boxPos{ 487, 142, 144 };
-	ImGui::DragFloat3("Mandelbox position", &boxPos[0]);
-	static float boxScale = 1.1f;
-	ImGui::DragFloat("Mandelbox scale", &boxScale, 0.1f);
 
 	static float uInvDistThreshold = 0;
 	ImGui::SliderFloat("uInvDistThreshold", &uInvDistThreshold, 0.000001f, .2f);
@@ -887,9 +923,11 @@ void ShaderPixel::drawMandelbrot(glm::mat4 viewProjection)
 	glm::vec2 cameraPos2 = glm::vec2(mCameraPosition.x, mCameraPosition.z);
 	if (glm::distance(cameraPos2, QuadPos2) < 450)
 	{
+		ImGui::Begin("Mandelbrot");
 		ImGui::DragFloat2("MandelPos", &MandelPos[0], 0.001f);
 		ImGui::DragFloat("MandelScale", &MandelScale, 0.0001f);
 		ImGui::DragFloat("MandelIter", &MandelIter);
+		ImGui::End();
 	}
 	mandel->Bind();
 	mandel->SetUniform("uCenter", MandelPos);

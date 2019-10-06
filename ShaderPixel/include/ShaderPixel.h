@@ -30,7 +30,7 @@ private:
 	void captureEnvMap();
 	void markEnvMapAsDirty();
 	void drawMandelbrot(glm::mat4 viewProjection);
-	void drawMandelbox(glm::mat4 viewProjection);
+	void drawMandelbox(glm::vec3 boxPos, float boxScale , glm::mat4 viewProjection);
 
 	ShaderID	mBox;
 	ShaderID	mFXAA;
@@ -68,6 +68,8 @@ private:
 
 	float		mAspectRatio = 1.f;
 	float		mSpeed = 1.f;
+
+	double		mCurrentTime = 0.0;
 
 	glm::vec3	mLightAngles	{ 1., 1.5, 0. };
 	glm::vec3	mCameraPosition {0,10,50};
