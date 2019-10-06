@@ -33,8 +33,6 @@ layout(std140) uniform global
     vec4    lightDir;
     vec4    cameraPosition;
     float   time;
-    float   fogParamA;
-    float   fogParamB;
 }           g;
 
 uniform sampler2D uDiffuse;
@@ -140,8 +138,8 @@ vec3 applyFog( in vec3  rgb,      // original color of the pixel
                in vec3  rayOri,   // camera position
                in vec3  rayDir )  // camera to point vector
 {
-    float c = g.fogParamA;
-    float b = g.fogParamB;
+    float c = 0.005;
+    float b = 0.009;
     float fogAmount = c * exp(-rayOri.y*b) * (1.0-exp( -distance*rayDir.y*b ))/rayDir.y;
     vec3  fogColor  = vec3(0.5,0.6,0.7);
     fogAmount = clamp(fogAmount, 0.0, 1.0);

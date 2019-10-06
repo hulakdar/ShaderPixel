@@ -21,8 +21,6 @@ layout(std140) uniform global
     vec4    lightDir;
     vec4    cameraPosition;
     float   time;
-    float   fogParamA;
-    float   fogParamB;
 }           g;
 
 void main()

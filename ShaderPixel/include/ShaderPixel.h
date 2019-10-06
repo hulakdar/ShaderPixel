@@ -59,8 +59,6 @@ private:
 		glm::vec4	lightDir;
 		glm::vec4	cameraPosition;
 		float		time;
-		float		fogParamA;
-		float		fogParamB;
 	} mGlobalBuffer;
 
 	GLuint		mGlobalBufferID;

@@ -138,9 +138,7 @@ void ShaderPixel::update()
 
 	glm::vec4 camvec4 = glm::vec4(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z, 1.f);
 	mGlobalBuffer.cameraPosition = camvec4;
-	mGlobalBuffer.time = float(glfwGetTime());
-	mGlobalBuffer.fogParamA = fogParamA;
-	mGlobalBuffer.fogParamB = fogParamB;
+	mGlobalBuffer.time = float(mCurrentTime);
 
 	glBindBuffer(GL_UNIFORM_BUFFER, mGlobalBufferID);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlobalUniformBuffer), &mGlobalBuffer);
@@ -165,7 +163,7 @@ void ShaderPixel::update()
 	if (1)
 	{
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
 		glDepthMask(false);
 
 		Shader* cloud = Resources::GetShader(mCloud);
