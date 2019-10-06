@@ -95,7 +95,7 @@ project "ShaderPixel"
 		symbols "On"
 
 project "Host"
-	location "Host"
+	location "./"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++14"
