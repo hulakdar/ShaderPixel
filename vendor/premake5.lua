@@ -42,7 +42,7 @@ project "ImGui"
 	targetdir ("../bin/" .. outputdir .. "/ShaderPixel")
     objdir ("../bin-int/" .. outputdir .. "/ShaderPixel")
 
-    defines "IMGUI_API=__declspec(dllexport)"
+
 
 	files
 	{
@@ -61,5 +61,5 @@ project "ImGui"
 	filter "system:windows"
         systemversion "latest"
         cppdialect "C++17"
-       --- taticruntime "On"
+		defines "IMGUI_API=__declspec(dllexport)"
         buildoptions "/MT"

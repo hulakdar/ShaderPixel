@@ -614,7 +614,7 @@ TextureData	LoadTextureData(const std::string& filename, int desiredComponentCou
 	if (desiredComponentCount)
 		ComponentCount = desiredComponentCount;
 	if (!LocalBuffer)
-		__debugbreak();
+		;//__debugbreak();
 	return { LocalBuffer, Size, ComponentCount };
 }
 
@@ -924,7 +924,9 @@ void ShaderPixel::preframe()
 }
 
 extern "C"
+#ifdef _MSC_VER
 __declspec(dllexport)
+#endif
 Application* getApplicationPtr()
 {
 	static ShaderPixel sShaderPixel;

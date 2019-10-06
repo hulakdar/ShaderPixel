@@ -56,14 +56,14 @@ const float limits[16] = float[](
 bool ditheredAlphaTest(float opacity)
 {
 #if DITHER_16
-	const int size = 16;
+	const uint size = 16;
 #else
-	const int size = 4;
+	const uint size = 4;
 #endif
 
-    int x = int(gl_FragCoord.x) % size;
-    int y = int(gl_FragCoord.y) % size;
-    int index = x + y * size;
+    uint x = uint(gl_FragCoord.x) % size;
+    uint y = uint(gl_FragCoord.y) % size;
+    uint index = x + y * size;
 
 #if DITHER_16
 	uint entry = index / 4;

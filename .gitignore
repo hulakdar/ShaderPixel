@@ -9,3 +9,4 @@ bin-int/
 *.sln
 *.vcxproj
 *.vcxproj.filters
+.vscode/launch.json
