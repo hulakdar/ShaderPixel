@@ -1,1 +1,1 @@
-call ..\premake5.exe vs2017
+call vendor\win\premake5.exe vs2017
