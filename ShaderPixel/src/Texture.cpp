@@ -30,7 +30,7 @@ Texture::Texture(const std::string& Filepath) :
 	
 	if (!LocalBuffer)
 	{
-		;//__debugbreak();
+		BREAK();
 	}
 	uploadData(LocalBuffer, Size, ComponentCount, GL_TEXTURE_2D, 1);
 	free(LocalBuffer);

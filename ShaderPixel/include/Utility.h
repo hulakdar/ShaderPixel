@@ -10,3 +10,9 @@
 void GLClearError();
 
 bool GLCheckError(const char *Function, const char *File, int Line);
+
+#ifdef _MSC_VER
+#define BREAK() __debugbreak()
+#else
+#define BREAK() __builtin_trap()
+#endif

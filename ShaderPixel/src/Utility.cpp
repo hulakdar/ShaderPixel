@@ -13,6 +13,7 @@ bool GLCheckError(const char *Function, const char *File, int Line)
 	while (GLenum Error = glGetError())
 	{
 		std::cerr << "OpenGL error: [" << std::hex << Error << "] while calling function " << Function << "; in [" << File << "] on line [" << std::dec << Line << "]\n";
+		BREAK();
 		return false;
 	}
 	return true;

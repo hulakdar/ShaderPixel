@@ -22,17 +22,22 @@ static std::string GetShaderSource(const std::string& Filepath, const std::strin
 	if (It != sShaderCache.end())
 		return result + It->second;
 
+	std::string RealFilepath = Resources::BaseFilepath + Filepath;
 	std::string shaderSource;
 	std::string tmp;
-	std::ifstream ShaderFile(Filepath);
+	std::ifstream ShaderFile(RealFilepath);
 	if (!ShaderFile.is_open() || ShaderFile.bad())
-		std::cerr << "Problems reading shader from: " << Filepath << '\n';
+	{
+		std::cerr << "Problems reading shader from: " << RealFilepath << '\n';
+		BREAK();
+	}
 
 	if (std::getline(ShaderFile, tmp))
 		shaderSource += tmp + "\n";
 	else
 	{
-		std::cerr << "Problems reading shader from: " << Filepath << '\n';
+		std::cerr << "Problems reading shader from: " << RealFilepath << '\n';
+		BREAK();
 	}
 
 	while (std::getline(ShaderFile, tmp))
@@ -66,7 +71,7 @@ static int CompileShader(unsigned int Type, const std::string& Filepath, const s
 		GLCall(glGetShaderInfoLog(ShaderProgram, result, &result, message));
 		std::cerr << "Failed to compile " << (Type == GL_FRAGMENT_SHADER ? "fragment" : "vertex") << " shader:" << message << std::endl;
 		GLCall(glDeleteShader(ShaderProgram));
-		//__debugbreak();
+		BREAK();
 		return (0);
 	}
 	return ShaderProgram;
@@ -87,7 +92,7 @@ static unsigned int CreateShader(unsigned int Vs, unsigned int Fs)
 		{
 			glGetProgramInfoLog(Program, 512, nullptr, errText);
 			std::cout << errText << '\n';
-			//__debugbreak();
+			BREAK();
 		}
 	}
 
@@ -132,8 +137,8 @@ static std::string ModifierFromMask(FeatureMask mask)
 }
 
 Shader::Shader(FeatureMask mask) : Shader(
-"../content/shaders/vertDefault.shader",
-"../content/shaders/fragDefault.shader",
+"shaders/vertDefault.shader",
+"shaders/fragDefault.shader",
 ModifierFromMask(mask))
 { }
 
