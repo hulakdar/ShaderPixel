@@ -65,6 +65,7 @@ private:
 
 	GLuint		mGlobalBufferID;
 
+	bool mCaptureMouse = true;
 
 	float		mAspectRatio = 1.f;
 	float		mSpeed = 1.f;

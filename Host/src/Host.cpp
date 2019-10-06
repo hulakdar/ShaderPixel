@@ -89,6 +89,7 @@ Host::Host(const std::string &dllPath)
 	// TODO: ??? glfwInitHint(); 
 	glfwInit();
 
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
@@ -99,8 +100,9 @@ Host::Host(const std::string &dllPath)
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	//glfwWindowHint(GLFW_FLOATING, 1); // window always on top
 
-	mWindow = glfwCreateWindow(600, 600, "ShaderPixel", nullptr, nullptr);
+	mWindow = glfwCreateWindow(1024, 1024, "ShaderPixel", nullptr, nullptr);
 	glfwSetWindowUserPointer(mWindow, this);
+	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	//glfwSetWindowOpacity(mWindow, 0.8f); // transparent window
 
 	glfwGetFramebufferSize(mWindow, &mWidth, &mHeight);
@@ -116,6 +118,12 @@ Host::Host(const std::string &dllPath)
 
 	updateDLL();
 	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
+	glfwFocusWindow(mWindow);
+
+	double dmousex, dmousey;
+	glfwGetCursorPos(mWindow, &dmousex, &dmousey);
+	mMouseX = float(dmousex);
+	mMouseY = float(dmousey);
 }
 
 void Host::updateWindowSize(int x, int y)
@@ -198,6 +206,7 @@ Host::~Host()
 	delete mApplication;
     ImGui_ImplGlfw_Shutdown();
 	glfwDestroyWindow(mWindow);
+	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	glfwTerminate();
 }
 

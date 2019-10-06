@@ -92,5 +92,5 @@ void main()
 	AO = pow(AO, 0.4545);
 
     vec3 end = (start + dir * distance);
-	FragColor = vec4(AO * abs(sin(end) + abs(cos(end))), 1);
+	FragColor = vec4(vec3(AO)/* * abs(sin(end) + abs(cos(end))) */, 1);
 }

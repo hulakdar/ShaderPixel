@@ -100,19 +100,19 @@ void ShaderPixel::update()
 			mCameraPosition += mCameraRight * speed;
 
 
-		bool UP		= glfwGetKey(host->mWindow, GLFW_KEY_UP)	== GLFW_PRESS;
-		bool DOWN	= glfwGetKey(host->mWindow, GLFW_KEY_DOWN)	== GLFW_PRESS;
-		bool LEFT	= glfwGetKey(host->mWindow, GLFW_KEY_LEFT)	== GLFW_PRESS;
-		bool RIGHT	= glfwGetKey(host->mWindow, GLFW_KEY_RIGHT) == GLFW_PRESS;
+		// bool UP		= glfwGetKey(host->mWindow, GLFW_KEY_UP)	== GLFW_PRESS;
+		// bool DOWN	= glfwGetKey(host->mWindow, GLFW_KEY_DOWN)	== GLFW_PRESS;
+		// bool LEFT	= glfwGetKey(host->mWindow, GLFW_KEY_LEFT)	== GLFW_PRESS;
+		// bool RIGHT	= glfwGetKey(host->mWindow, GLFW_KEY_RIGHT) == GLFW_PRESS;
 
-		if (LEFT)
-			mCameraAngles.x -= 0.1f;
-		if (RIGHT)
-			mCameraAngles.x += 0.1f;
-		if (DOWN)
-			mCameraAngles.y += 0.1f;
-		if (UP)
-			mCameraAngles.y -= 0.1f;
+		// if (LEFT)
+		// 	mCameraAngles.x -= 0.1f;
+		// if (RIGHT)
+		// 	mCameraAngles.x += 0.1f;
+		// if (DOWN)
+		// 	mCameraAngles.y += 0.1f;
+		// if (UP)
+		// 	mCameraAngles.y -= 0.1f;
 
 		if (mCameraAngles.x > 2 * M_PI)
 			mCameraAngles.x -= float(2 * M_PI);
@@ -165,7 +165,7 @@ void ShaderPixel::update()
 	if (1)
 	{
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendFunc(GL_ONE, GL_SRC_ALPHA);
 		glDepthMask(false);
 
 		Shader* cloud = Resources::GetShader(mCloud);
@@ -178,10 +178,10 @@ void ShaderPixel::update()
 		cloud->SetUniform("uVolume", (GLint)0);
 		cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
 
-		static float uDensity = 10.f;
-		static float uShadowDensity = 1.f;
-		ImGui::DragFloat("uDensity", &uDensity, .1f);
-		ImGui::DragFloat("uShadowDensity", &uShadowDensity, .1f);
+		static float uDensity = 0.1f;
+		static float uShadowDensity = 0.9f;
+		ImGui::DragFloat("uDensity", &uDensity, .01f);
+		ImGui::DragFloat("uShadowDensity", &uShadowDensity, .01f);
 		cloud->SetUniform("uDensity", uDensity);
 		cloud->SetUniform("uShadowDensity", uShadowDensity);
 
@@ -616,15 +616,10 @@ void ShaderPixel::onMouseMove(float x, float y, float dX, float dY)
 	(void)x;
 	(void)y;
 
-	if (glfwGetMouseButton(staticHost()->mWindow, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+	if (mCaptureMouse || glfwGetMouseButton(staticHost()->mWindow, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 	{
 		mCameraAngles.x += dX / mWindowSize.x;
 		mCameraAngles.y += dY / mWindowSize.y;
-	}
-	else if (glfwGetMouseButton(staticHost()->mWindow, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
-	{
-		//mLightAngles.x += dX / mWindowSize.x;
-		//mLightAngles.y += dY / mWindowSize.y;
 	}
 }
 
@@ -638,7 +633,9 @@ void ShaderPixel::onScroll(float x, float y)
 
 void ShaderPixel::onKey(int key, int scancode, int action, int mods)
 {
-	//ImGui::Text("%d %d %d %d", key, scancode, action, mods);
+	if (action == GLFW_PRESS && key == GLFW_KEY_SPACE)
+		mCaptureMouse = !mCaptureMouse;
+	glfwSetInputMode(getHost().mWindow, GLFW_CURSOR, mCaptureMouse ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
 TextureData	LoadTextureData(const std::string& filename, int desiredComponentCount = 0)
