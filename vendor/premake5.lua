@@ -1,6 +1,8 @@
 project "TinyObjLoader"
+    location "tinyobjloader"
     kind "StaticLib"
     language "C++"
+    cppdialect "C++14"
     
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -17,8 +19,6 @@ project "TinyObjLoader"
 
 	filter "system:windows"
         systemversion "latest"
-        cppdialect "C++17"
-        --- staticruntime "On"
 
 	filter "configurations:Debug"
 		defines { "DEBUG" }
@@ -36,12 +36,12 @@ project "TinyObjLoader"
 
 project "ImGui"
 	location "ImGui"
-    kind "SharedLib"
+    kind "StaticLib"
     language "C++"
+    cppdialect "C++14"
     
 	targetdir ("../bin/" .. outputdir .. "/ShaderPixel")
     objdir ("../bin-int/" .. outputdir .. "/ShaderPixel")
-
 
 	files
 	{
@@ -59,12 +59,10 @@ project "ImGui"
     
 	filter "system:windows"
         systemversion "latest"
-        cppdialect "C++17"
-		defines "IMGUI_API=__declspec(dllexport)"
-        buildoptions "/MT"
 
 project "GLFW"
     kind "StaticLib"
+    location "GLFW"
     language "C"
     
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -85,7 +83,7 @@ project "GLFW"
     
 	filter "system:windows"
         systemversion "latest"
-        staticruntime "On"
+        --- staticruntime "On"
         
         files
         {
@@ -106,12 +104,7 @@ project "GLFW"
             "_CRT_SECURE_NO_WARNINGS"
 		}
 
-    filter { "system:windows", "configurations:Release" }
-        buildoptions "/MT"
-
 	filter "system:macosx"
-        --- staticruntime "On"
-        
         files
         {
             "GLFW/src/cocoa_init.m",

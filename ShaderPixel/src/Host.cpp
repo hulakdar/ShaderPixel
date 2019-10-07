@@ -1,14 +1,8 @@
 #include <glad/glad.h>
+#include <imgui_impl_glfw.h>
+
 #include "Host.h"
 #include "UserInterface.h"
-#include <iostream>
-#include <fstream>
-#include <imgui_impl_glfw.h>
-#ifdef _MSC_VER
-# include <windows.h>
-#endif
-#include <assert.h>
-//#include "Application.h"
 #include "ShaderPixel.h"
 
 namespace { namespace Callbacks {

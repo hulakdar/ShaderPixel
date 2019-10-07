@@ -23,30 +23,28 @@ IncludeDir["TinyObjLoader"] = "vendor/tinyobjloader"
 IncludeDir["assimp"] = "vendor/assimp"
 
 group "Dependencies"
-	--- include "vendor/GLFW"
 	include "vendor/Glad"
 	include "vendor/"
 group ""
 
-
 project "ShaderPixel"
-	location "ShaderPixel"
-	kind "StaticLib"
+	location "."
+	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++14"
-	--- staticruntime "on"
-
    
 	targetdir ("bin/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
 	defines {
-		"IMGUI_IMPL_OPENGL_LOADER_GLAD"
+		"IMGUI_IMPL_OPENGL_LOADER_GLAD" --- this should be re-done eventually. this is hack
 	} 
 
 	files {
-        "vendor/imgui/examples/imgui_impl_opengl3.h",
-        "vendor/imgui/examples/imgui_impl_opengl3.cpp",
+        "vendor/imgui/examples/imgui_impl_opengl3.h", --- this should be re-done eventually. this is hack
+        "vendor/imgui/examples/imgui_impl_opengl3.cpp", --- this should be re-done eventually. this is hack
+        "vendor/imgui/examples/imgui_impl_glfw.h", --- this should be re-done eventually. this is hack
+        "vendor/imgui/examples/imgui_impl_glfw.cpp", --- this should be re-done eventually. this is hack
 		"%{prj.name}/include/**.h",
 		"%{prj.name}/src/**.cpp"
 	}
@@ -67,17 +65,28 @@ project "ShaderPixel"
 
 	links 
 	{ 
-		--"ImGuiImplGL",
+		"GLFW",
+		"TinyObjLoader",
+		"Glad",
+		"ImGui"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
 		defines {
-			"IMGUI_API=__declspec(dllimport)", 
+			"IMGUI_API=", 
 			"IMGUI_IMPL_API="
 		}
 		links {
-		"opengl32.lib"
+            "opengl32.lib"
+        }
+
+	filter "system:macosx"
+		links { 
+			"Cocoa.framework",
+			"OpenGL.framework",
+			"CoreVideo.framework",
+			"IOKit.framework"
 		}
 
 	filter "configurations:Debug"
@@ -94,9 +103,9 @@ project "ShaderPixel"
 		optimize "On"
 		symbols "On"
 
+--[[
 project "Host"
 	location "./"
-	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++14"
    
@@ -123,37 +132,4 @@ project "Host"
 		"%{IncludeDir.ImGuiImpl}"
 	}
 
-	links 
-	{ 
-		"GLFW",
-		"ShaderPixel",
-		"TinyObjLoader",
-		"Glad",
-		"ImGui"
-        --, "ImGuiImplGL"
-	}
-
-	filter "system:macosx"
-		links { 
-			"Cocoa.framework",
-			"OpenGL.framework",
-			"CoreVideo.framework",
-			"IOKit.framework"
-		}
-
-	filter "system:windows"
-		systemversion "latest"
-
-	filter "configurations:Debug"
-		defines { "DEBUG" }
-		symbols "On"
-
-	filter "configurations:Development"
-		defines { "DEVELOPMENT" }
-		symbols "On"
-		optimize "On"
-
-	filter "configurations:Release"
-		defines { "RELEASE" }
-		optimize "On"
-		symbols "On"
+--]]

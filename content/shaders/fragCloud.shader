@@ -17,7 +17,7 @@ uniform vec3        uCamPosMS;
 
 const uint    cStepLimit = 64;
 const uint    cShadowSteps = 8;
-const float   cRayStepSize = 1.0/cStepLimit;
+const float   cRayStepSize = 1.0 / float(cStepLimit);
 
 float sampleVolume(vec3 p)
 {

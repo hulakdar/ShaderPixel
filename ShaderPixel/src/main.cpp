@@ -3,20 +3,6 @@
 #include "Collision.h"
 #include <iostream>
 
-static const struct
-{
-	float x, y;
-	float r, g, b;
-} vertices[] =
-{
-	{-1.f,-1.f, 1.f, 1.f, 0.f },
-	{ 1.f,-1.f, 1.f, 1.f, 0.f },
-	{-1.f, 1.f, 1.f, 0.f, 1.f },
-	{ 1.f,-1.f, 1.f, 1.f, 0.f },
-	{-1.f, 1.f, 1.f, 0.f, 1.f },
-	{ 1.f, 1.f, 1.f, 1.f, 1.f }
-};
-
 int main(int argc, const char* argv[])
 {
 	std::string exePath = argv[0];
@@ -50,8 +36,6 @@ int main(int argc, const char* argv[])
 		app.update();
 		ImGui::Render();
 		ImGui::EndFrame();
-		//ImGui::UpdatePlatformWindows();
-		//ImGui::RenderPlatformWindowsDefault();
 		app.swapBuffers();
 	}
 }
