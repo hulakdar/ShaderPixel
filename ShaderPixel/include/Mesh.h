@@ -25,7 +25,7 @@ struct Mesh
 
 struct Model;
 
-void LoadMesh(	const tinyobj::mesh_t& mesh,
+void	LoadMesh(const tinyobj::mesh_t& mesh,
 				const tinyobj::attrib_t& attributes,
-				Model& model
-);
+				Model& model, size_t MaterialIdOffset);
+

@@ -19,7 +19,7 @@ Vertex	MakeVertex(const tinyobj::mesh_t& mesh, const tinyobj::attrib_t& attribut
 
 void	LoadMesh(	const tinyobj::mesh_t& mesh,
 					const tinyobj::attrib_t& attributes,
-					Model& model)
+					Model& model, size_t MaterialIdOffset)
 {
 	std::map<int, std::vector<Vertex>> submeshes;
 
@@ -27,7 +27,7 @@ void	LoadMesh(	const tinyobj::mesh_t& mesh,
 	for (size_t i = 0; i < mesh.num_face_vertices.size(); i++)
 	{
 		unsigned char	num = mesh.num_face_vertices[i];
-		MaterialID		matID = mesh.material_ids[i];
+		MaterialID		matID = mesh.material_ids[i] + MaterialIdOffset;
 
 		std::vector<Vertex>&		vertexData = submeshes[matID];
 

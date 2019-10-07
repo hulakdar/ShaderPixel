@@ -25,6 +25,7 @@ public:
 private:
 
 	bool mEnvMapDirty = true;
+	bool mShadowPassDirty = true;
 
 	void shadowPass();
 	void captureEnvMap();

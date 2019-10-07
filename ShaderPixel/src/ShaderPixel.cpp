@@ -137,8 +137,7 @@ void ShaderPixel::update()
 	glBindBuffer(GL_UNIFORM_BUFFER, mGlobalBufferID);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlobalUniformBuffer), &mGlobalBuffer);
 
-	if (mEnvMapDirty)
-		captureEnvMap();
+	captureEnvMap();
 
 	setRenderTarget(&mSceneColorMS);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -504,11 +503,10 @@ void ShaderPixel::shadowPass()
 	Host* host = staticHost();
 	AppMemory* mem = host->mMemory;
 
-	static bool shadowPassDirty = true;
 	ImGui::Begin("Lights");
-	shadowPassDirty |= ImGui::SliderAngle("lightX", &mLightAngles.x);
-	shadowPassDirty |= ImGui::SliderAngle("lightY", &mLightAngles.y);
-	shadowPassDirty |= ImGui::SliderAngle("lightZ", &mLightAngles.z);
+	mShadowPassDirty |= ImGui::SliderAngle("lightX", &mLightAngles.x);
+	mShadowPassDirty |= ImGui::SliderAngle("lightY", &mLightAngles.y);
+	mShadowPassDirty |= ImGui::SliderAngle("lightZ", &mLightAngles.z);
 
 	static glm::vec2	LR = {-2650, 2650};
 	static glm::vec2	BT = {-2100, 2100};
@@ -519,7 +517,7 @@ void ShaderPixel::shadowPass()
 	ImGui::DragFloat2("NF", &NF[0]);
 	ImGui::End();
 
-	if (!shadowPassDirty)
+	if (!mShadowPassDirty)
 		return;
 
 	glm::mat4 shadowView =
@@ -546,10 +544,9 @@ void ShaderPixel::shadowPass()
 
 	static const glm::vec4 LIGHT_DIR{ 0,0,1,0 };
 
-	// scene
 	mGlobalBuffer.lightDir = glm::normalize(glm::inverse(shadowView) * LIGHT_DIR);
 	mGlobalBuffer.lightView = shadowTransform;
-	shadowPassDirty = false;
+	mShadowPassDirty = false;
 	markEnvMapAsDirty();
 }
 
@@ -561,6 +558,8 @@ void ShaderPixel::markEnvMapAsDirty()
 
 void ShaderPixel::captureEnvMap()
 {
+	if (!mEnvMapDirty)
+		return;
 	Host* host = staticHost();
 	AppMemory* mem = host->mMemory;
 	glCullFace(GL_BACK);
@@ -848,37 +847,47 @@ void ShaderPixel::init(Host* host)
 	"shaders/vertWorldSpace.shader",
 	"shaders/fragReadCubemap.shader");
 
-	Scene &scene = host->mMemory->scene;
+	Scene& scene = host->mMemory->scene;
 
-	tinyobj::ObjReader objReader;
-	tinyobj::ObjReaderConfig config;
-	config.vertex_color = false;
-	objReader.ParseFromFile(Resources::BaseFilepath + "sponza/sponza.obj", config);
+	auto AddModelToScene = [](Scene& scene, std::string Filepath, glm::mat4 transform = glm::mat4(1.f)) {
 
-	std::string OldPath = Resources::BaseFilepath + "sponza/";
+		size_t MaterialIdOffset = Resources::Materials.size();
+		tinyobj::ObjReader objReader;
+		tinyobj::ObjReaderConfig config;
+		config.vertex_color = false;
+		config.triangulate = false;
+		objReader.ParseFromFile(Resources::BaseFilepath + Filepath, config);
+		assert(objReader.Valid());
 
-	std::swap(OldPath, Resources::BaseFilepath);
-	assert(objReader.Valid());
+		Filepath.resize(Filepath.rfind('/') + 1);
+		// temporarily set base filepath to dir with file. needed for correct texture paths
+		std::string OldPath = Resources::BaseFilepath + Filepath;
+		std::swap(OldPath, Resources::BaseFilepath);
 
-	auto& shapes = objReader.GetShapes();
-	auto& attributes = objReader.GetAttrib();
-	auto& materials = objReader.GetMaterials();
+		auto& shapes = objReader.GetShapes();
+		auto& attributes = objReader.GetAttrib();
+		auto& materials = objReader.GetMaterials();
 
-	std::thread MaterialLoader(&LoadMaterials, &materials);
-	//LoadMaterials(materials);
+		std::thread MaterialLoader(&LoadMaterials, &materials);
+		//LoadMaterials(materials);
 
-	scene.models.emplace_back();
+		size_t ModelID = scene.models.size();
+		scene.models.emplace_back();
+		scene.models[ModelID].mModelSpace = transform;
 
-	Resources::Meshes.reserve(shapes.size() * 20);
-	for (size_t i = 0; i < shapes.size(); i++)
-	{
-		scene.models[0].mName = shapes[i].name;
-		LoadMesh(shapes[i].mesh, attributes, scene.models[0]);
-	}
-	MaterialLoader.join();
+		Resources::Meshes.reserve(shapes.size() + Resources::Meshes.size());
+		for (size_t i = 0; i < shapes.size(); i++)
+		{
+			LoadMesh(shapes[i].mesh, attributes, scene.models[ModelID], MaterialIdOffset);
+		}
+		MaterialLoader.join();
 
-	// undo the base path change
-	std::swap(OldPath, Resources::BaseFilepath);
+		// undo the base path change
+		std::swap(OldPath, Resources::BaseFilepath);
+	};
+	AddModelToScene(scene, "sponza/sponza.obj");
+	AddModelToScene(scene, "sphere/sphere.obj", glm::translate(glm::mat4(200.f), glm::vec3{0, 400, 0}));
+
 	Resources::FlushTextureData();
 }
 
