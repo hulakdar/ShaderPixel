@@ -130,41 +130,46 @@ vec3 dither(vec3 color)
     return color + getLimit() / 32.0 - 1.0/64.0;
 }
 
-bool alphaTest(float opacity)
+vec2 VogelDiskSample(float sampleId, float samplesCount, float noise)
 {
-	return (opacity <= getLimit());
+    float r = sqrt(sampleId + 0.5) / sqrt(samplesCount);
+    float theta = sampleId * 2.4 + noise;
+    float sine = sin(theta);
+    float cosine = cos(theta);
+    return vec2(r * cosine, r * sine);
 }
 
+float InterleavedGradientNoise(vec2 position_screen)
+{
+    vec3 magic = vec3(0.06711056f, 0.00583715f, 52.9829189f);
+    return fract(magic.z * fract(dot(position_screen, magic.xy)));
+}
 
 float shadowCalculation(vec4 fragPosLightSpace)
 {
+    float noise = InterleavedGradientNoise(gl_FragCoord.xy);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     // get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-    //if (currentDepth > 1.f)
-        //return 0.f;
-
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(uShadow, 0);
-    float offsetSize = 1.2;
-    for(int x = -2; x <= 2; ++x)
+    float offsetSize = 1.21;
+    const int samplesCount = 16;
+    for(int y = 0; y <= samplesCount; ++y)
     {
-        for(int y = -2; y <= 2; ++y)
-        {
-            float pcfDepth = texture(uShadow, projCoords + vec3(x, y, 0.f) * vec3(texelSize * offsetSize, 1.f)); 
-            shadow += float(currentDepth > pcfDepth);
-        }    
-    }
-    shadow *= 0.04;
+        vec2 offset = VogelDiskSample(y, samplesCount, noise * 6.28);
+        float pcfDepth = texture(uShadow, projCoords + vec3(offset * texelSize * offsetSize, 0.f)); 
+        shadow += pcfDepth;
+    }    
+    shadow *= 1.0/samplesCount;
     
     // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-     if(projCoords.z > 1.0)
-         shadow = 0.0;
+    if(projCoords.z > 1.0)
+        shadow = 0.0;
         
-    return shadow;
+    return 1 - shadow;
 }
 
 vec3 applyFog( in vec3  rgb,      // original color of the pixel
@@ -178,6 +183,11 @@ vec3 applyFog( in vec3  rgb,      // original color of the pixel
     vec3  fogColor  = vec3(0.5,0.6,0.7);
     fogAmount = clamp(fogAmount, 0.0, 1.0);
     return mix( rgb, fogColor, fogAmount );
+}
+
+bool alphaTest(float opacity)
+{
+	return (opacity <= getLimit());
 }
 
 void main()

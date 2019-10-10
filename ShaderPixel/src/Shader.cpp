@@ -69,7 +69,7 @@ static int CompileShader(unsigned int Type, const std::string& Filepath, const s
 		GLCall(glGetShaderiv(ShaderProgram, GL_INFO_LOG_LENGTH, &result));
 		char *message = static_cast<char *>(alloca(result));
 		GLCall(glGetShaderInfoLog(ShaderProgram, result, &result, message));
-		std::cerr << "Failed to compile " << (Type == GL_FRAGMENT_SHADER ? "fragment" : "vertex") << " shader:" << message << std::endl;
+		std::cerr << "Failed to compile " << (Type == GL_FRAGMENT_SHADER ? "fragment" : "vertex") << " shader:\n" << message << std::endl;
 		GLCall(glDeleteShader(ShaderProgram));
 		BREAK();
 		return (0);

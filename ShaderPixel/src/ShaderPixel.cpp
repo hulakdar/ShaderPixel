@@ -770,9 +770,9 @@ void ShaderPixel::init(Host* host)
 	CloudTexture.Type = GL_TEXTURE_2D;
 	Resources::Textures.emplace_back(CloudTexture);
 
-	mShadow = makeRenderTargetShadow(glm::ivec2(4096*2));
+	mShadow = makeRenderTargetShadow(glm::ivec2(1024));
 
-	const glm::ivec2 resolution(512);
+	const glm::ivec2 resolution(1280, 720);
 
 	mSceneColorMS = makeRenderTargetMultisampled(resolution, GL_RGB, 8);
 	mPingPong[0] = makeRenderTarget(resolution, GL_RGB, false);
