@@ -156,6 +156,7 @@ namespace Renderer
 						ApplyMaterial(material, currentShader);
 						currentShader->SetUniform("uMVP", MVP);
 						currentShader->SetUniform("uModelToWorld", model.mModelSpace);
+						currentShader->SetUniform("uEnvironment", 14); // hack. don't know how to set it properly
 						currentShader->SetUniform("uShadow", 15); // hack. don't know how to set it properly
 						Draw(mesh);
 					}

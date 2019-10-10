@@ -16,6 +16,22 @@
 #define DITHERED 0
 #endif
 
+#ifndef REFLECTION
+#define REFLECTION 0
+#endif
+
+#ifndef REFRACTION
+#define REFRACTION 0
+#endif
+
+#ifndef DISSOLVE
+#define DISSOLVE 0
+#endif
+
+#ifndef DIFFUSE_TEXTURE
+#define DIFFUSE_TEXTURE 0
+#endif
+
 
 in VS_OUT
 {
@@ -35,9 +51,26 @@ layout(std140) uniform global
     float   time;
 }           g;
 
-uniform sampler2D uDiffuse;
+
+#if REFRACTION
+uniform float uIor;
+#endif
+
+#if DIFFUSE_TEXTURE
+uniform sampler2D   uDiffuse;
+#else
+uniform vec4        uDiffuseColor;
+#endif
+
+#if ALPHA_TEXTURE
 uniform sampler2D uAlpha;
+#elif DISSOLVE
+uniform float uDissolve;
+#endif
+
 uniform sampler2DShadow uShadow;
+uniform samplerCube uEnvironment;
+
 
 #if DITHER_16
 // bytes packed in uint fo less cache misses
@@ -68,7 +101,7 @@ const float limits[16] = float[](
 );
 #endif
 
-bool ditheredAlphaTest(float opacity)
+float getLimit()
 {
 #if DITHER_16
 	const uint size = 16;
@@ -89,18 +122,19 @@ bool ditheredAlphaTest(float opacity)
 #else
     float limit = limits[index];
 #endif
-
-	return (opacity <= limit);
+    return limit;
 }
 
-bool alphaTest(float a)
+vec3 dither(vec3 color)
 {
-#if DITHERED
-	return (ditheredAlphaTest(a));
-#else
-	return (a < 0.1f);
-#endif
+    return color + getLimit() / 32.0 - 1.0/64.0;
 }
+
+bool alphaTest(float opacity)
+{
+	return (opacity <= getLimit());
+}
+
 
 float shadowCalculation(vec4 fragPosLightSpace)
 {
@@ -148,7 +182,12 @@ vec3 applyFog( in vec3  rgb,      // original color of the pixel
 
 void main()
 {
+#if DIFFUSE_TEXTURE
 	vec4 albedo_a = texture(uDiffuse, vs_out.TexCoord);
+#else
+	vec4 albedo_a = uDiffuseColor;
+#endif
+
 	vec3 albedo = albedo_a.rgb;
 
 #if MASKED
@@ -158,6 +197,8 @@ void main()
 	// get alpha from somewhere
 # if ALPHA_TEXTURE
 	float a = texture(uAlpha, vs_out.TexCoord).r;
+# elif DISSOLVE
+	float a = 1.0 - uDissolve;
 # else
 	float a = albedo_a.a;
 # endif
@@ -166,10 +207,13 @@ void main()
 #if !SHADOW_PASS
 	float currentDepth = gl_FragCoord.z;
 	a = min(a, currentDepth * currentDepth * currentDepth * currentDepth * currentDepth);
-#endif
-
 	if (alphaTest(smoothstep(.0, .9, a)))
 		discard;
+#else
+	if (a < 0.1f);
+		discard;
+#endif
+
 
 #else
 	// default opaque case
@@ -179,16 +223,39 @@ void main()
 
 
 #if !SHADOW_PASS
+    vec3 fragToCam = vs_out.FragPosWorldSpace - g.cameraPosition.xyz;
+    vec3 incident = normalize(fragToCam);
+
 	float shadow = shadowCalculation(vs_out.FragPosLightSpace);
 
 	vec3 diffuse = albedo * D * shadow * 0.8;
 	vec3 ambient = albedo * 0.25;
     vec3 finalColor = applyFog(
         diffuse + ambient,
-        distance(vs_out.FragPosWorldSpace, g.cameraPosition.xyz),
+        length(fragToCam),
         g.cameraPosition.xyz - vec3(0,300,0),
-        normalize(vs_out.FragPosWorldSpace - g.cameraPosition.xyz)
+        incident
     );
+#if DITHERED
+    finalColor = dither(finalColor);
+#endif
 	fragColor = vec4(finalColor, a);
+
+    //float fresnelCoefficient = fresnel();
+
+#if REFRACTION
+ // this is for test purposes. nor final
+    vec3 refractedDir = refract(incident, vs_out.Normal, 1.0/uIor);
+    vec3 refracted = texture(uEnvironment, refractedDir).xyz;
+	fragColor = vec4(refracted, a);
+#endif
+
+#if REFLECTION
+ // this is for test purposes. nor final
+    vec3 reflectedDir = reflect(incident, vs_out.Normal);
+    vec3 reflected = texture(uEnvironment, reflectedDir).xyz;
+	fragColor = vec4(reflected, a);
+#endif
+
 #endif
 }

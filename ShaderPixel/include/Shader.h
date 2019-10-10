@@ -7,13 +7,17 @@
 
 typedef size_t ShaderID;
 
-typedef uint8_t FeatureMask;
+typedef uint16_t FeatureMask;
 enum Feature {
 	AlphaTexture = 1 << 0,
 	Masked = 1 << 1,
 	Dithered = 1 << 2,
 	ShadowPass = 1 << 3,
-	Count = 4 // update by hand?? not cool :C
+	Reflection = 1 << 4,
+	Refraction = 1 << 5,
+	Dissolve = 1 << 6,
+	DiffuseTexture = 1 << 7,
+	Count = 8 // update by hand?? not cool :C
 };
 
 const GLuint GLOBAL_BLOCK_BINDING_LOCATION = 0;

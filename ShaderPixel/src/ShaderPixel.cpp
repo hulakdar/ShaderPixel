@@ -146,42 +146,8 @@ void ShaderPixel::update()
 	Renderer::Draw(mem->scene, viewProjection);
 
 	drawMandelbrot(viewProjection);
-
-	static glm::vec3 manboxPos{ 487, 142, 144 };
-	static float manboxScale = 1.1f;
-
-	drawMandelbox(manboxPos, manboxScale, viewProjection);
-
-	// cloud
-	if (1)
-	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-		glDepthMask(false);
-
-		Shader* cloud = Resources::GetShader(mCloud);
-
-		glm::vec3 boxPos{ 0,750,0 };
-		float boxScale = 5;
-
-		Texture* CloudTexture = Resources::GetTexture(Texture::Cloud);
-		CloudTexture->Bind();
-		cloud->SetUniform("uVolume", (GLint)0);
-		cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
-
-		static float uDensity = 0.1f;
-		static float uShadowDensity = 0.9f;
-		ImGui::DragFloat("uDensity", &uDensity, .01f);
-		ImGui::DragFloat("uShadowDensity", &uShadowDensity, .01f);
-		cloud->SetUniform("uDensity", uDensity);
-		cloud->SetUniform("uShadowDensity", uShadowDensity);
-
-		Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
-		glDisable(GL_BLEND);
-		glDisable(GL_CULL_FACE);
-		glDepthMask(true);
-	}
-
+	drawMandelbox(viewProjection);
+	drawCloud(viewProjection);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, mSceneColorMS.rendererID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPingPong[0].rendererID); 
@@ -540,7 +506,7 @@ void ShaderPixel::shadowPass()
 	Renderer::Draw(mem->scene, shadowTransform, Feature::ShadowPass);
 
 	glActiveTexture(GL_TEXTURE15);
-	glBindTexture(GL_TEXTURE_2D, mShadow.textures[1]);
+	glBindTexture(GL_TEXTURE_2D, mShadow.textures[RenderTarget::Depth]);
 
 	static const glm::vec4 LIGHT_DIR{ 0,0,1,0 };
 
@@ -558,8 +524,8 @@ void ShaderPixel::markEnvMapAsDirty()
 
 void ShaderPixel::captureEnvMap()
 {
-	if (!mEnvMapDirty)
-		return;
+	//if (!mEnvMapDirty)
+		//return;
 	Host* host = staticHost();
 	AppMemory* mem = host->mMemory;
 	glCullFace(GL_BACK);
@@ -582,17 +548,21 @@ void ShaderPixel::captureEnvMap()
 		glm::vec3(0.0f, -1.0f, 0.0f)
 	};
 
-	const static glm::vec3 probePosition{ 0, 400, 0 };
-
-	const float fov = 90.f;
-	glm::mat4 projection = glm::perspective(glm::radians(fov), 1.f, .1f, 9000.f);
-
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 		GL_TEXTURE_CUBE_MAP_POSITIVE_X + mFaceIndex, mEnvProbe.textures[RenderTarget::Color], 0);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
+	const static glm::vec3 probePosition{ 0, 400, 0 };
+	glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1.f, .1f, 9000.f);
 	glm::mat4 view = glm::lookAt(probePosition, probePosition + targetVectors[mFaceIndex], upVectors[mFaceIndex]);
-	Renderer::Draw(mem->scene, projection * view);
+	glm::mat4 viewProjection = projection * view;
+	Renderer::Draw(mem->scene, viewProjection , Feature::Dithered);
+	drawMandelbrot(viewProjection);
+	drawMandelbox(viewProjection);
+	drawCloud(viewProjection);
+
+	glActiveTexture(GL_TEXTURE14);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, mEnvProbe.textures[RenderTarget::Color]);
 
 	mFaceIndex++;
 	if (mFaceIndex >= 6)
@@ -693,10 +663,38 @@ void LoadMaterials(const std::vector<tinyobj::material_t>* materials)
 		Material* current = Resources::GetMaterial(currentID);
 
 		FeatureMask mask = 0;
+
+		if (It.dissolve < 1.0f)
+		{
+			mask |= Feature::Refraction;
+			mask |= Feature::Reflection;
+
+			Uniform ior;
+			ior.type = UniformType::FLOAT;
+			ior.scalar = It.ior;
+			ior.name = "uIor";
+			current->uniforms.push_back(ior);
+
+			Uniform dissolve;
+			ior.type = UniformType::FLOAT;
+			ior.scalar = It.dissolve;
+			ior.name = "uDissolve";
+			current->uniforms.push_back(dissolve);
+		}
+
 		if (!It.diffuse_texname.empty())
+		{
+			mask |= Feature::DiffuseTexture;
 			current->uniforms.push_back(PushTexture(It.diffuse_texname, TextureUsage::Diffuse));
+		}
 		else
-			std::cerr << "Currently only textured materials supported.\n";
+		{
+			Uniform diffuse;
+			diffuse.type = UniformType::VEC4;
+			diffuse.v4 = glm::vec4(It.diffuse[0], It.diffuse[1], It.diffuse[2], It.dissolve);
+			diffuse.name = "uDiffuseColor";
+			current->uniforms.push_back(diffuse);
+		}
 
 		if (!It.alpha_texname.empty())
 		{
@@ -704,7 +702,6 @@ void LoadMaterials(const std::vector<tinyobj::material_t>* materials)
 			current->blendMode = BlendMode::Masked;
 			mask |= Feature::AlphaTexture;
 			mask |= Feature::Masked;
-			mask |= Feature::Dithered;
 		}
 		else
 			current->blendMode = BlendMode::Opaque;
@@ -773,27 +770,22 @@ void ShaderPixel::init(Host* host)
 	CloudTexture.Type = GL_TEXTURE_2D;
 	Resources::Textures.emplace_back(CloudTexture);
 
+	mShadow = makeRenderTargetShadow(glm::ivec2(4096*2));
 
-	// hack. need to figure out async shader compilation (look at how Textures are loaded. should be pretty similar)
-	Shader::GetShaderWithFeatures(7);
-	// hack.
-
-	mShadow = makeRenderTargetShadow(glm::ivec2(4096*2, 4096*2));
-
-	const glm::ivec2 resolution{1024, 1024};
+	const glm::ivec2 resolution(512);
 
 	mSceneColorMS = makeRenderTargetMultisampled(resolution, GL_RGB, 8);
-	mPingPong[0] = makeRenderTarget(resolution, GL_RGB, true);
-	mPingPong[1] = makeRenderTarget(resolution, GL_RGB, true);
-	mHalfRes[0] = makeRenderTarget(resolution/2, GL_RGB, true);
-	mHalfRes[1] = makeRenderTarget(resolution/2, GL_RGB, true);
-	mQuarterRes[0] = makeRenderTarget(resolution/4, GL_RGB, true);
-	mQuarterRes[1] = makeRenderTarget(resolution/4, GL_RGB, true);
-	mEightsRes[0] = makeRenderTarget(resolution/8, GL_RGB, true);
-	mEightsRes[1] = makeRenderTarget(resolution/8, GL_RGB, true);
-	mSixteenthsRes[0] = makeRenderTarget(resolution/16, GL_RGB, true);
-	mSixteenthsRes[1] = makeRenderTarget(resolution/16, GL_RGB, true);
-	mEnvProbe = makeRenderTargetCube(glm::ivec2(512), true);
+	mPingPong[0] = makeRenderTarget(resolution, GL_RGB, false);
+	mPingPong[1] = makeRenderTarget(resolution, GL_RGB, false);
+	mHalfRes[0] = makeRenderTarget(resolution/2, GL_RGB, false);
+	mHalfRes[1] = makeRenderTarget(resolution/2, GL_RGB, false);
+	mQuarterRes[0] = makeRenderTarget(resolution/4, GL_RGB, false);
+	mQuarterRes[1] = makeRenderTarget(resolution/4, GL_RGB, false);
+	mEightsRes[0] = makeRenderTarget(resolution/8, GL_RGB, false);
+	mEightsRes[1] = makeRenderTarget(resolution/8, GL_RGB, false);
+	mSixteenthsRes[0] = makeRenderTarget(resolution/16, GL_RGB, false);
+	mSixteenthsRes[1] = makeRenderTarget(resolution/16, GL_RGB, false);
+	mEnvProbe = makeRenderTargetCube(glm::ivec2(128), true);
 
 	GLCall(glGenBuffers(1, &mGlobalBufferID));
 	GLCall(glBindBuffer(GL_UNIFORM_BUFFER, mGlobalBufferID));
@@ -802,6 +794,7 @@ void ShaderPixel::init(Host* host)
 	GLCall(glBindBufferBase(GL_UNIFORM_BUFFER, 0, mGlobalBufferID));
 
 
+	// special shaders
 	mMandelbrot = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
 	"shaders/vertWorldSpace.shader",
@@ -826,11 +819,6 @@ void ShaderPixel::init(Host* host)
 	Resources::Shaders.emplace_back(
 	"shaders/vertFullscreen.shader",
 	"shaders/fragBrightFilter.shader");
-
-	mBloom = Resources::Shaders.size();
-	Resources::Shaders.emplace_back(
-	"shaders/vertFullscreen.shader",
-	"shaders/fragBloom.shader");
 
 	mBlur = Resources::Shaders.size();
 	Resources::Shaders.emplace_back(
@@ -886,13 +874,16 @@ void ShaderPixel::init(Host* host)
 		std::swap(OldPath, Resources::BaseFilepath);
 	};
 	AddModelToScene(scene, "sponza/sponza.obj");
-	AddModelToScene(scene, "sphere/sphere.obj", glm::translate(glm::mat4(200.f), glm::vec3{0, 400, 0}));
+	AddModelToScene(scene, "sphere/sphere.obj", glm::translate(glm::mat4(1.f), glm::vec3{0, 400, 0}));
 
 	Resources::FlushTextureData();
 }
 
-void ShaderPixel::drawMandelbox(glm::vec3 boxPos, float boxScale , glm::mat4 viewProjection)
+void ShaderPixel::drawMandelbox(glm::mat4 viewProjection)
 {
+	static glm::vec3 boxPos{ 487, 142, 144 };
+	static float boxScale = 1.1f;
+
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 	Shader* manbox = Resources::GetShader(mBox);
@@ -934,6 +925,35 @@ void ShaderPixel::drawMandelbrot(glm::mat4 viewProjection)
 	mandel->SetUniform("uIter", MandelIter);
 
 	Renderer::DrawQuadWS(QuadPos, QuadScale, mandel, viewProjection);
+}
+
+void ShaderPixel::drawCloud(glm::mat4 viewProjection)
+{
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+	glDepthMask(false);
+
+	Shader* cloud = Resources::GetShader(mCloud);
+
+	glm::vec3 boxPos{ 0,2350,0 };
+	float boxScale = 50;
+
+	Texture* CloudTexture = Resources::GetTexture(Texture::Cloud);
+	CloudTexture->Bind();
+	cloud->SetUniform("uVolume", (GLint)0);
+	cloud->SetUniform("uCamPosMS", (mCameraPosition - boxPos) / boxScale);
+
+	static float uDensity = 0.1f;
+	static float uShadowDensity = 0.9f;
+	ImGui::DragFloat("uDensity", &uDensity, .01f);
+	ImGui::DragFloat("uShadowDensity", &uShadowDensity, .01f);
+	cloud->SetUniform("uDensity", uDensity);
+	cloud->SetUniform("uShadowDensity", uShadowDensity);
+
+	Renderer::DrawCubeWS(boxPos, boxScale, cloud, viewProjection);
+	glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+	glDepthMask(true);
 }
 
 void ShaderPixel::deinit()

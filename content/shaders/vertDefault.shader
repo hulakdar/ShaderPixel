@@ -28,7 +28,7 @@ void main()
 	gl_Position = uMVP * vPos;
 
 	vs_out.TexCoord = vUV;
-	vs_out.Normal = vNorm;
+	vs_out.Normal = normalize(mat3(uModelToWorld) * vNorm);
 	vs_out.FragPosWorldSpace = vec3(uModelToWorld * vPos);
 	vs_out.FragPosLightSpace = g.lightView * vPos;
 }

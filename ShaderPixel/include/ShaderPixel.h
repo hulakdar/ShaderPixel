@@ -31,7 +31,8 @@ private:
 	void captureEnvMap();
 	void markEnvMapAsDirty();
 	void drawMandelbrot(glm::mat4 viewProjection);
-	void drawMandelbox(glm::vec3 boxPos, float boxScale , glm::mat4 viewProjection);
+	void drawCloud(glm::mat4 viewProjection);
+	void drawMandelbox(glm::mat4 viewProjection);
 
 	ShaderID	mBox;
 	ShaderID	mFXAA;
@@ -40,7 +41,6 @@ private:
 	ShaderID	mCubeMapTest;
 	ShaderID	mBrightnessFilter;
 	ShaderID	mBlur;
-	ShaderID	mBloom;
 	ShaderID	mMandelbrot;
 
 

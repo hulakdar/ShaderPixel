@@ -124,6 +124,10 @@ static std::string ModifierFromMask(FeatureMask mask)
 		"#define MASKED 1\n",
 		"#define DITHERED 1\n",
 		"#define SHADOW_PASS 1\n",
+		"#define REFLECTION 1\n",
+		"#define REFRACTION 1\n",
+		"#define DISSOLVE 1\n",
+		"#define DIFFUSE_TEXTURE 1\n",
 	};
 
 	static_assert(ARRAY_COUNT(Modifiers) == Feature::Count, "Modifier count != Feature count");

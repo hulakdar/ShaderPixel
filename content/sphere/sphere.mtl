@@ -4,8 +4,9 @@ newmtl sphere
 Ns 0
 Ka 0.000000 0.000000 0.000000
 Ks 0.8 0.8 0.8
-map_Kd ..\face.png
-d 1
+Kd 0.8 0.8 0.8
+d 0.5
 illum 2
+Ni 1.49
 
 

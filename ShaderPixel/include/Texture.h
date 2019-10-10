@@ -13,7 +13,6 @@ enum TextureUsage : uint16_t
 	Bump,
 	Displacement,
 	Alpha,
-	Reflection,
 	Emissive,
 	Noise,
 };

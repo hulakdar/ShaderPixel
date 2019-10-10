@@ -15,7 +15,7 @@ RenderTarget makeRenderTargetCube(glm::ivec2 size, bool needsDepth)
 	GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP, result.textures[RenderTarget::Color]));
 	for (int i = 0; i < 6; i++)
 	{
-		GLCall(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, 0));
+		GLCall(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB5_A1, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, 0));
 	}
 	GLCall(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	GLCall(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
@@ -23,8 +23,8 @@ RenderTarget makeRenderTargetCube(glm::ivec2 size, bool needsDepth)
 	GLCall(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 	GLCall(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
 
-	glBindRenderbuffer(GL_RENDERBUFFER, result.attachments[RenderTarget::Depth]);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, result.textures[RenderTarget::Color], 0);
+	GLCall(glBindRenderbuffer(GL_RENDERBUFFER, result.attachments[RenderTarget::Depth]));
+	GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, result.textures[RenderTarget::Color], 0));
 
 	if (needsDepth)
 	{
