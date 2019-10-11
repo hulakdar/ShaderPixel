@@ -1,9 +1,8 @@
+#include "Host.h"
+
 #include <string>
 #include <vector>
 #include <glad/glad.h>
-
-struct Host;
-Host& getHost();
 
 class Application
 {

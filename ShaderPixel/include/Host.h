@@ -1,7 +1,8 @@
 #pragma once
+#include "Utils.h"
+
 #include <GLFW/glfw3.h>
 #include <string>
-#include "Utils.h"
 
 class Application;
 struct AppMemory;

@@ -65,7 +65,6 @@ void Host::onScroll(float x, float y)
 
 void Host::preframe()
 {
-	updateDLL();
 	mApplication->preframe();
 }
 
@@ -110,7 +109,12 @@ Host::Host(const std::string &dllPath)
 
 	glfwGetWindowContentScale(mWindow, &mScale, &mScale);
 
-	updateDLL();
+	gladLoadGL();
+
+	mApplication = new ShaderPixel();
+	mApplication->init(this);
+	mApplication->updateWindowSize(mWidth, mHeight);
+
 	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
 	glfwFocusWindow(mWindow);
 
@@ -127,52 +131,6 @@ void Host::updateWindowSize(int x, int y)
 	mApplication->updateWindowSize(x, y);
 }
 
-void Host::updateDLL()
-{
-#if HOTLOAD
-	Timestamp currentDllTimestamp;
-	currentDllTimestamp.update(mDllPath);
-
-	if (mDllTimestamp == currentDllTimestamp && !mForceReload)
-		return;
-	mForceReload = false;
-
-	if (mApplication)
-		mApplication->deinit();
-	std::string dllName = mDllPath.substr(mDllPath.rfind('\\') + 1, std::string::npos);
-	std::string tmpDLL = mDllPath;
-	tmpDLL.insert(tmpDLL.find(dllName), "tmp");
-	CopyFileA(mDllPath.c_str(), tmpDLL.c_str(), false);
-
-	HMODULE tmpModule = LoadLibraryA(tmpDLL.c_str() + tmpDLL.find("tmp"));
-
-	if (!tmpModule)
-		return;
-	if (mLib)
-		FreeLibrary((HMODULE)mLib);
-
-	ApplicationGetter *app = (ApplicationGetter *)GetProcAddress((HMODULE)tmpModule, "getApplicationPtr");
-
-	if (!app)
-	{
-		FreeLibrary((HMODULE)tmpModule);
-		return;
-	}
-
-	mApplication = app();
-	mApplication->init(this);
-	mDllTimestamp = currentDllTimestamp;
-#else
-	if (mApplication)
-		return;
-
-	gladLoadGL();
-
-	mApplication = new ShaderPixel();
-	mApplication->init(this);
-	mApplication->updateWindowSize(mWidth, mHeight);
-#endif
-}
 
 bool Host::shouldClose()
 {
@@ -189,9 +147,8 @@ void Host::update()
 
 void Host::swapBuffers()
 {
-	GLFWwindow* backup_current_context = glfwGetCurrentContext();
 	mApplication->renderUI();
-	glfwMakeContextCurrent(backup_current_context);
+	glfwMakeContextCurrent(mWindow);
 	glfwSwapBuffers(mWindow);
 }
 

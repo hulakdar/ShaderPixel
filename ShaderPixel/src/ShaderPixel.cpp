@@ -1,5 +1,7 @@
+#include <glad/glad.h>
+// for some reason it should be first
+
 #include "ShaderPixel.h"
-#include "Host.h"
 #include "Resources.h"
 #include "Collision.h"
 #include "Utility.h"
@@ -7,8 +9,6 @@
 #include <iostream>
 #include <thread>
 
-#define _USE_MATH_DEFINES 
-#include <math.h>
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 #include <stb_image.h>
@@ -16,40 +16,14 @@
 #include <imgui_impl_opengl3.h>
 #include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glad/glad.h>
 #include <algorithm>
 
-Host*& staticHost()
-{
-	static Host *sHost;
-	return sHost;
-}
-
-Host& getHost()
-{
-	return *staticHost();
-}
-
-#if HOTLOAD
-
-void *operator new(size_t size)
-{
-	void * p = getHost().allocate(size);
-	return p;
-}
-
-void operator delete(void * p)
-{
-	getHost().deallocate(p);
-}
-#endif
+#define _USE_MATH_DEFINES 
+#include <math.h>
 
 void ShaderPixel::update()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	Host* host = staticHost();
-	AppMemory* mem = host->mMemory;
 
 	static float Near = 1;
 	static float Far = 90000;
@@ -70,21 +44,23 @@ void ShaderPixel::update()
 		mCameraAngles.x, glm::vec3(0, 1, 0)
 	);
 
+	GLFWwindow *window = glfwGetCurrentContext();
+
 	// camera movement 
 	{
 		mCameraForward = glm::vec3(0, 0, 1) * glm::mat3(cameraRotation);
 		mCameraRight = glm::cross(mCameraUp, mCameraForward);
 
-		bool SHIFT = glfwGetKey(host->mWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+		bool SHIFT = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
 
 		float speed = mSpeed * ((float)SHIFT + 1.f);
 
-		bool W = glfwGetKey(host->mWindow, GLFW_KEY_W) == GLFW_PRESS;
-		bool S = glfwGetKey(host->mWindow, GLFW_KEY_S) == GLFW_PRESS;
-		bool A = glfwGetKey(host->mWindow, GLFW_KEY_A) == GLFW_PRESS;
-		bool D = glfwGetKey(host->mWindow, GLFW_KEY_D) == GLFW_PRESS;
-		bool Q = glfwGetKey(host->mWindow, GLFW_KEY_Q) == GLFW_PRESS;
-		bool E = glfwGetKey(host->mWindow, GLFW_KEY_E) == GLFW_PRESS;
+		bool W = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
+		bool S = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+		bool A = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
+		bool D = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+		bool Q = glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS;
+		bool E = glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS;
 
 		if (Q)
 			mCameraPosition -= mCameraUp * speed;
@@ -98,21 +74,6 @@ void ShaderPixel::update()
 			mCameraPosition -= mCameraRight * speed;
 		if (D)
 			mCameraPosition += mCameraRight * speed;
-
-
-		// bool UP		= glfwGetKey(host->mWindow, GLFW_KEY_UP)	== GLFW_PRESS;
-		// bool DOWN	= glfwGetKey(host->mWindow, GLFW_KEY_DOWN)	== GLFW_PRESS;
-		// bool LEFT	= glfwGetKey(host->mWindow, GLFW_KEY_LEFT)	== GLFW_PRESS;
-		// bool RIGHT	= glfwGetKey(host->mWindow, GLFW_KEY_RIGHT) == GLFW_PRESS;
-
-		// if (LEFT)
-		// 	mCameraAngles.x -= 0.1f;
-		// if (RIGHT)
-		// 	mCameraAngles.x += 0.1f;
-		// if (DOWN)
-		// 	mCameraAngles.y += 0.1f;
-		// if (UP)
-		// 	mCameraAngles.y -= 0.1f;
 
 		if (mCameraAngles.x > 2 * M_PI)
 			mCameraAngles.x -= float(2 * M_PI);
@@ -143,7 +104,7 @@ void ShaderPixel::update()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	glCullFace(GL_BACK);
-	Renderer::Draw(mem->scene, viewProjection);
+	Renderer::Draw(scene, viewProjection);
 
 	drawMandelbrot(viewProjection);
 	drawMandelbox(viewProjection);
@@ -466,9 +427,6 @@ ShaderPixel::~ShaderPixel()
 
 void ShaderPixel::shadowPass()
 {
-	Host* host = staticHost();
-	AppMemory* mem = host->mMemory;
-
 	ImGui::Begin("Lights");
 	mShadowPassDirty |= ImGui::SliderAngle("lightX", &mLightAngles.x);
 	mShadowPassDirty |= ImGui::SliderAngle("lightY", &mLightAngles.y);
@@ -503,7 +461,10 @@ void ShaderPixel::shadowPass()
 
 	glCullFace(GL_FRONT);
 	// shadow
-	Renderer::Draw(mem->scene, shadowTransform, Feature::ShadowPass);
+	Renderer::Draw(scene, shadowTransform, Feature::ShadowPass);
+	drawMandelbox(shadowTransform);
+	drawMandelbrot(shadowTransform);
+	drawCloud(shadowTransform);
 
 	glActiveTexture(GL_TEXTURE15);
 	glBindTexture(GL_TEXTURE_2D, mShadow.textures[RenderTarget::Depth]);
@@ -524,10 +485,6 @@ void ShaderPixel::markEnvMapAsDirty()
 
 void ShaderPixel::captureEnvMap()
 {
-	//if (!mEnvMapDirty)
-		//return;
-	Host* host = staticHost();
-	AppMemory* mem = host->mMemory;
 	glCullFace(GL_BACK);
 
 	setRenderTarget(&mEnvProbe);
@@ -556,7 +513,7 @@ void ShaderPixel::captureEnvMap()
 	glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1.f, .1f, 9000.f);
 	glm::mat4 view = glm::lookAt(probePosition, probePosition + targetVectors[mFaceIndex], upVectors[mFaceIndex]);
 	glm::mat4 viewProjection = projection * view;
-	Renderer::Draw(mem->scene, viewProjection , Feature::Dithered);
+	Renderer::Draw(scene, viewProjection , Feature::Dithered);
 	drawMandelbrot(viewProjection);
 	drawMandelbox(viewProjection);
 	drawCloud(viewProjection);
@@ -577,7 +534,8 @@ void ShaderPixel::onMouseMove(float x, float y, float dX, float dY)
 	(void)x;
 	(void)y;
 
-	if (mCaptureMouse || glfwGetMouseButton(staticHost()->mWindow, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+
+	if (mCaptureMouse || glfwGetMouseButton(glfwGetCurrentContext(), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 	{
 		mCameraAngles.x += dX / mWindowSize.x;
 		mCameraAngles.y += dY / mWindowSize.y;
@@ -596,7 +554,7 @@ void ShaderPixel::onKey(int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_PRESS && key == GLFW_KEY_SPACE)
 		mCaptureMouse = !mCaptureMouse;
-	glfwSetInputMode(getHost().mWindow, GLFW_CURSOR, mCaptureMouse ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, mCaptureMouse ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
 TextureData	LoadTextureData(const std::string& filename, int desiredComponentCount = 0)
@@ -712,20 +670,10 @@ void LoadMaterials(const std::vector<tinyobj::material_t>* materials)
 
 void ShaderPixel::init(Host* host)
 {
-	staticHost() = host;
-
-	if (!host->mMemory)
-	{
-		host->mMemory = new AppMemory();
-	}
-
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
-	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
 	ImGui::StyleColorsDark();
 	ImFontConfig cfg;
@@ -739,22 +687,7 @@ void ShaderPixel::init(Host* host)
 	}
 
 	// Setup Platform/Renderer bindings
-	ImGui_ImplOpenGL3_Init("#version 410 core"); //ImGui_ImplOpenGL3_Init(glsl_version);
-
-// Load Fonts
-// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-// - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-// - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-// - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-// - Read 'misc/fonts/README.txt' for more instructions and details.
-// - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-//io.Fonts->AddFontDefault();
-//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-//io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-//io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-//IM_ASSERT(font != NULL);
+	ImGui_ImplOpenGL3_Init("#version 410 core");
 
 	Renderer::Init();
 	assert(Resources::Textures.size() == 1);
@@ -834,8 +767,6 @@ void ShaderPixel::init(Host* host)
 	Resources::Shaders.emplace_back(
 	"shaders/vertWorldSpace.shader",
 	"shaders/fragReadCubemap.shader");
-
-	Scene& scene = host->mMemory->scene;
 
 	auto AddModelToScene = [](Scene& scene, std::string Filepath, glm::mat4 transform = glm::mat4(1.f)) {
 

@@ -1,14 +1,9 @@
 #include "Application.h"
 #include "Renderer.h"
 #include "RenderTarget.h"
+#include "Host.h"
 
-struct AppMemory
-{
-	//ShaderManager	shaderManager;
-	Scene			scene;
-};
-
-class ShaderPixel : public Application
+class ShaderPixel final : public Application
 {
 public:
 	virtual void init(Host*) override;
@@ -43,6 +38,7 @@ private:
 	ShaderID	mBlur;
 	ShaderID	mMandelbrot;
 
+	Scene			scene;
 
 	RenderTarget mSceneColorMS;
 	RenderTarget mShadow;
