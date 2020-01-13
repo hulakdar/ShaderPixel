@@ -161,17 +161,10 @@ namespace Renderer
 						currentShader->SetUniform("uEnvironment", 14); // hack. don't know how to set it properly
 						currentShader->SetUniform("uShadow", 15); // hack. don't know how to set it properly
 						Draw(mesh);
-						Draw(mesh->bounds);
+#ifdef DEVELOPMENT
+						Draw(mesh->bounds, viewProjection);
+#endif
 					}
-
-	//				Shader* defaultShader = Resources::GetShader(0);
-	//				if (defaultShader)
-	//				{
-	//					defaultShader->SetUniform("uMVP", MVP);
-	//					defaultShader->SetUniform("uModelToWorld", model.mModelSpace);
-	//					defaultShader->SetUniform("uEnvironment", 14); // hack. don't know how to set it properly
-	//					defaultShader->SetUniform("uShadow", 15); // hack. don't know how to set it properly
-	//				}
 				}
 			}
 		}
@@ -186,9 +179,8 @@ namespace Renderer
 			;//Draw(mesh->mVertexArray, mesh->mIndexBuffer);
 	}
 
-	void Draw(AABB& bounds)
+	void Draw(AABB& bounds, glm::mat4 viewProjection)
 	{
-		static GLuint scratchBuffers[2];
 		static unsigned char indexData[] = {
 			0, 1, 2,
 			0, 2, 3,
@@ -198,63 +190,16 @@ namespace Renderer
 			4, 6, 7
 		};
 
-		if (!scratchBuffers[0])
-		{
-			GLCall(glGenBuffers(2, scratchBuffers));
-			GLCall(glBindBuffer(GL_ARRAY_BUFFER, scratchBuffers[0]));
-			GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scratchBuffers[1]));
-
-			GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW));
-		}
-		else
-		{
-			GLCall(glBindBuffer(GL_ARRAY_BUFFER, scratchBuffers[0]));
-			GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scratchBuffers[1]));
-		}
-
 		if ((bounds.Min.x == bounds.Max.x) ||
 			(bounds.Min.y == bounds.Max.y) ||
 			(bounds.Min.z == bounds.Max.z))
 			return;
-		
-		Vertex vertexData[]{
-			Vertex{
-				bounds.Min,
-				glm::vec3(), glm::vec2()
-			},
-			Vertex{
-				{bounds.Min.x, bounds.Min.y, bounds.Max.z},
-				glm::vec3(), glm::vec2()
-			},
-			Vertex{
-				{bounds.Min.x, bounds.Max.y, bounds.Max.z},
-				glm::vec3(), glm::vec2()
-			},
-			Vertex{
-				{bounds.Min.x, bounds.Max.y, bounds.Min.z},
-				glm::vec3(), glm::vec2()
-			},
-			Vertex{
-				{bounds.Max.x, bounds.Max.y, bounds.Min.z},
-				glm::vec3(), glm::vec2()
-			},
-			Vertex{
-				{bounds.Max.x, bounds.Min.y, bounds.Min.z},
-				glm::vec3(), glm::vec2()
-			},
-			Vertex{
-				{bounds.Max.x, bounds.Min.y, bounds.Max.z},
-				glm::vec3(), glm::vec2()
-			},
-			Vertex{
-				bounds.Max,
-				glm::vec3(), glm::vec2()
-			},
-		};
 
-		GLCall(glDisable(GL_CULL_FACE));
-		GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_DRAW));
-		GLCall(glDrawElements(GL_TRIANGLES, ARRAY_COUNT(indexData), GL_UNSIGNED_BYTE, NULL));
+		const glm::vec3 Scale =		(bounds.Max - bounds.Min) / 18.0f;
+		const glm::vec3 Center =	(bounds.Max + bounds.Min) / 2.0f;
+
+		ShaderID defaultShaderID = Shader::GetShaderWithFeatures(0);
+		DrawCubeWS(Center, Scale, Resources::GetShader(defaultShaderID), viewProjection);
 	}
 
 	void Draw(const VertexArray& va, const IndexBuffer& ib)
@@ -293,6 +238,15 @@ namespace Renderer
 		glm::mat4 MVP = viewProjection * modelSpace;
 		shader->SetUniform("uMVP", MVP);
 		Cube.Bind();
-		GLCall(glDrawArrays(GL_TRIANGLES, 0, ARRAY_COUNT(CubeData)));
+		GLCall(glDrawArrays(GL_TRIANGLES, 0, ARRAY_COUNT(CubeData) / 8));
+	}
+
+	void DrawCubeWS(glm::vec3 Position, glm::vec3 scale, Shader *shader, glm::mat4 viewProjection)
+	{
+		glm::mat4 modelSpace = glm::scale(glm::translate(glm::mat4(1), Position), scale);
+		glm::mat4 MVP = viewProjection * modelSpace;
+		shader->SetUniform("uMVP", MVP);
+		Cube.Bind();
+		GLCall(glDrawArrays(GL_LINES, 0, ARRAY_COUNT(CubeData) / 8));
 	}
 }

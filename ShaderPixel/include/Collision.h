@@ -13,13 +13,13 @@ inline bool
 PointInsideBox(glm::vec3 point, AABB box)
 {
 	auto more =
-		point.x >= box.min.x &&
-		point.y >= box.min.y &&
-		point.z >= box.min.z ;
+		point.x >= box.Min.x &&
+		point.y >= box.Min.y &&
+		point.z >= box.Min.z ;
 	auto less = 
-		point.x <= box.max.x &&
-		point.y <= box.max.y &&
-		point.z <= box.max.z ;
+		point.x <= box.Max.x &&
+		point.y <= box.Max.y &&
+		point.z <= box.Max.z ;
 	return less && more;
 }
 
@@ -28,8 +28,8 @@ SphereBoxIntersection(Sphere& sphere, AABB& box)
 {
 	if (PointInsideBox(sphere.position, box))
 	{
-		auto toMin = box.min - sphere.position;
-		auto toMax = box.max - sphere.position;
+		auto toMin = box.Min - sphere.position;
+		auto toMax = box.Max - sphere.position;
 
 		auto absolute = glm::abs(toMin);
 		if (glm::length(toMin) < glm::length(toMax))
@@ -45,7 +45,7 @@ SphereBoxIntersection(Sphere& sphere, AABB& box)
 			return {0, 0, z};
 		return {0, y, 0};
 	}
-	glm::vec3 possibleIntersection = glm::clamp(sphere.position, box.min, box.max);
+	glm::vec3 possibleIntersection = glm::clamp(sphere.position, box.Min, box.Max);
 	glm::vec3 collision = sphere.position - possibleIntersection;
 	float penetration = glm::length(collision);
 	if (penetration >= sphere.radius)
