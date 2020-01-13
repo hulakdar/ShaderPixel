@@ -149,7 +149,7 @@ float getLimit()
 
 vec3 dither(vec3 color)
 {
-    return color + getLimit() / 32.0 - 1.0/128.0;
+    return color + getLimit() / 32.0 - 1.0/64.0;
 }
 
 void main()

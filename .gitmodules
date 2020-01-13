@@ -10,3 +10,6 @@
 [submodule "vendor/tinyobjloader"]
 	path = vendor/tinyobjloader
 	url = https://github.com/syoyo/tinyobjloader.git
+[submodule ".\\vendor\\tinygltf"]
+	path = .\\vendor\\tinygltf
+	url = https://github.com/syoyo/tinygltf.git

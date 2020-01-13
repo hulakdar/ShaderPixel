@@ -1,21 +1,16 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "AABB.h"
 
-struct CollisionSphere
+struct Sphere
 {
 	glm::vec3	position;
 	float		radius;
 };
 
-struct CollisionAABB
-{
-	glm::vec3	min;
-	glm::vec3	max;
-};
-
 inline bool
-PointInsideBox(glm::vec3 point, CollisionAABB box)
+PointInsideBox(glm::vec3 point, AABB box)
 {
 	auto more =
 		point.x >= box.min.x &&
@@ -29,7 +24,7 @@ PointInsideBox(glm::vec3 point, CollisionAABB box)
 }
 
 inline glm::vec3
-SphereBoxIntersection(CollisionSphere& sphere, CollisionAABB& box)
+SphereBoxIntersection(Sphere& sphere, AABB& box)
 {
 	if (PointInsideBox(sphere.position, box))
 	{

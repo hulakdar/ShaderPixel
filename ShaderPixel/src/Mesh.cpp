@@ -1,5 +1,6 @@
 #include "Mesh.h"
 #include "Model.h"
+#include "AABB.h"
 
 #include <assert.h>
 #include "Resources.h"
@@ -11,9 +12,9 @@ Vertex	MakeVertex(const tinyobj::mesh_t& mesh, const tinyobj::attrib_t& attribut
 	size_t nIndex = mesh.indices[scrubber].normal_index;
 
 	Vertex tmp;
-	tmp.Position = *((glm::vec3*) & attributes.vertices[vIndex * 3]);
-	tmp.UV = *((glm::vec2*) & attributes.texcoords[uIndex * 2]);
-	tmp.Normal = *((glm::vec3*) & attributes.normals[nIndex * 3]);
+	tmp.Position =	*((glm::vec3*)	&attributes.vertices[vIndex * 3]);
+	tmp.UV =		*((glm::vec2*)	&attributes.texcoords[uIndex * 2]);
+	tmp.Normal =	*((glm::vec3*)	&attributes.normals[nIndex * 3]);
 	return tmp;
 }
 
@@ -27,7 +28,7 @@ void	LoadMesh(	const tinyobj::mesh_t& mesh,
 	for (size_t i = 0; i < mesh.num_face_vertices.size(); i++)
 	{
 		unsigned char	num = mesh.num_face_vertices[i];
-		MaterialID		matID = mesh.material_ids[i] + MaterialIdOffset;
+		MaterialID		matID = (MaterialID)(mesh.material_ids[i] + MaterialIdOffset);
 
 		std::vector<Vertex>&		vertexData = submeshes[matID];
 
@@ -50,11 +51,15 @@ void	LoadMesh(	const tinyobj::mesh_t& mesh,
 		model.mMeshes.push_back(NewMeshID);
 		MaterialID					matID = It.first;
 		std::vector<Vertex>&   vertexData = It.second;
+
+		AABB bounds = GetMeshAABB(vertexData);
+
 		Resources::Meshes.push_back({
 			VertexBuffer(vertexData),
 			VertexArray(),
 			matID,
-			(unsigned int)vertexData.size()
+			(unsigned int)vertexData.size(),
+			bounds
 		});
 		Mesh* mesh = Resources::GetMesh(NewMeshID);
 
