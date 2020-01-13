@@ -84,7 +84,10 @@ namespace Renderer
 		glEnable(GL_MULTISAMPLE); //need?
 
 		assert(Resources::Textures.size() == 0);
-		Resources::Textures.emplace_back();// default texture
+		assert(Resources::Materials.size() == 0);
+
+		Resources::Textures.emplace_back();// default texture ?
+		Resources::Materials.emplace_back();// default material ?
 
 		{
 			QuadBuffer.Init(QuadData, sizeof(QuadData));
@@ -145,7 +148,6 @@ namespace Renderer
 						glDisable(GL_CULL_FACE);
 					}
 
-
 					FeatureMask mask = material->features | customFeatures;
 
 					ShaderID shaderID = Shader::GetShaderWithFeatures(mask);
@@ -159,7 +161,17 @@ namespace Renderer
 						currentShader->SetUniform("uEnvironment", 14); // hack. don't know how to set it properly
 						currentShader->SetUniform("uShadow", 15); // hack. don't know how to set it properly
 						Draw(mesh);
+						Draw(mesh->bounds);
 					}
+
+	//				Shader* defaultShader = Resources::GetShader(0);
+	//				if (defaultShader)
+	//				{
+	//					defaultShader->SetUniform("uMVP", MVP);
+	//					defaultShader->SetUniform("uModelToWorld", model.mModelSpace);
+	//					defaultShader->SetUniform("uEnvironment", 14); // hack. don't know how to set it properly
+	//					defaultShader->SetUniform("uShadow", 15); // hack. don't know how to set it properly
+	//				}
 				}
 			}
 		}
@@ -172,6 +184,77 @@ namespace Renderer
 			Draw(mesh->vertexArray, mesh->count);
 		else
 			;//Draw(mesh->mVertexArray, mesh->mIndexBuffer);
+	}
+
+	void Draw(AABB& bounds)
+	{
+		static GLuint scratchBuffers[2];
+		static unsigned char indexData[] = {
+			0, 1, 2,
+			0, 2, 3,
+			2, 3, 4,
+			2, 4, 5,
+			4, 5, 6,
+			4, 6, 7
+		};
+
+		if (!scratchBuffers[0])
+		{
+			GLCall(glGenBuffers(2, scratchBuffers));
+			GLCall(glBindBuffer(GL_ARRAY_BUFFER, scratchBuffers[0]));
+			GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scratchBuffers[1]));
+
+			GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW));
+		}
+		else
+		{
+			GLCall(glBindBuffer(GL_ARRAY_BUFFER, scratchBuffers[0]));
+			GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scratchBuffers[1]));
+		}
+
+		if ((bounds.Min.x == bounds.Max.x) ||
+			(bounds.Min.y == bounds.Max.y) ||
+			(bounds.Min.z == bounds.Max.z))
+			return;
+		
+		Vertex vertexData[]{
+			Vertex{
+				bounds.Min,
+				glm::vec3(), glm::vec2()
+			},
+			Vertex{
+				{bounds.Min.x, bounds.Min.y, bounds.Max.z},
+				glm::vec3(), glm::vec2()
+			},
+			Vertex{
+				{bounds.Min.x, bounds.Max.y, bounds.Max.z},
+				glm::vec3(), glm::vec2()
+			},
+			Vertex{
+				{bounds.Min.x, bounds.Max.y, bounds.Min.z},
+				glm::vec3(), glm::vec2()
+			},
+			Vertex{
+				{bounds.Max.x, bounds.Max.y, bounds.Min.z},
+				glm::vec3(), glm::vec2()
+			},
+			Vertex{
+				{bounds.Max.x, bounds.Min.y, bounds.Min.z},
+				glm::vec3(), glm::vec2()
+			},
+			Vertex{
+				{bounds.Max.x, bounds.Min.y, bounds.Max.z},
+				glm::vec3(), glm::vec2()
+			},
+			Vertex{
+				bounds.Max,
+				glm::vec3(), glm::vec2()
+			},
+		};
+
+		GLCall(glDisable(GL_CULL_FACE));
+		GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_DRAW));
+		GLCall(glDrawElements(GL_TRIANGLES, ARRAY_COUNT(indexData), GL_UNSIGNED_BYTE, NULL));
 	}
 
 	void Draw(const VertexArray& va, const IndexBuffer& ib)

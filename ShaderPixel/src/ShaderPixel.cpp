@@ -436,9 +436,9 @@ void ShaderPixel::shadowPass()
 	static glm::vec2	BT = {-2100, 2100};
 	static glm::vec2	NF = {-2800, 2600};
 
-	ImGui::DragFloat2("LR", &LR[0]);
-	ImGui::DragFloat2("BT", &BT[0]);
-	ImGui::DragFloat2("NF", &NF[0]);
+	mShadowPassDirty |= ImGui::DragFloat2("LR", &LR[0]);
+	mShadowPassDirty |= ImGui::DragFloat2("BT", &BT[0]);
+	mShadowPassDirty |= ImGui::DragFloat2("NF", &NF[0]);
 	ImGui::End();
 
 	if (!mShadowPassDirty)
@@ -672,7 +672,7 @@ void ShaderPixel::init(Host* host)
 {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 
 	ImGui::StyleColorsDark();

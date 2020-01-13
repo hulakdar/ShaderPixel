@@ -5,6 +5,7 @@
 #include "VertexBufferLayout.h"
 #include "IndexBuffer.h"
 #include "Material.h"
+#include "AABB.h"
 
 struct Vertex
 {
@@ -21,6 +22,7 @@ struct Mesh
     VertexArray			vertexArray;
     MaterialID          materialID;
 	unsigned int		count = 0; // if zero then it's indexed so use IndexBuffer
+	AABB				bounds;
 };
 
 struct Model;
