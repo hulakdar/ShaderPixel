@@ -38,9 +38,10 @@ namespace Renderer
 	void Draw(Mesh* Mesh);
 	void Draw(const VertexArray& Va, const IndexBuffer& Ib);
 	void Draw(const VertexArray& Va, unsigned int Count);
-	void Draw(AABB& bounds);
+	void Draw(AABB& bounds, glm::mat4 viewProjection);
 	void DrawQuadFS();
 	void DrawQuadWS(glm::vec3 Position, glm::vec2 scale, Shader* shader, glm::mat4 viewProjection);
 	void DrawCubeWS(glm::vec3 Position, float scale, Shader* shader, glm::mat4 viewProjection);
+	void DrawCubeWS(glm::vec3 Position, glm::vec3 scale, Shader *shader, glm::mat4 viewProjection);
 };
 
