@@ -1,22 +1,26 @@
-#include "Application.h"
 #include "Renderer.h"
 #include "RenderTarget.h"
-#include "Host.h"
 
-class ShaderPixel final : public Application
+#include <GLFW/glfw3.h>
+
+class ShaderPixel
 {
 public:
-	virtual void init(Host*) override;
-	virtual void deinit() override;
+	ShaderPixel();
+	void init();
+	void deinit();
+	bool shouldClose();
 
-	virtual void update() override;
-	virtual void updateWindowSize(int x, int y) override;
-	virtual void renderUI() override;
-	virtual void preframe() override;
-	virtual void onKey(int key, int scancode, int action, int mods) override;
-	virtual void onMouseMove(float x, float y, float dX, float dY) override;
-	virtual void onScroll(float x, float y) override;
-	virtual ~ShaderPixel();
+	void update();
+	void updateWindowSize(int x, int y);
+	void preframe();
+	void onKey(int key, int scancode, int action, int mods);
+	void onMouseMove(float x, float y);
+	void onScroll(float x, float y);
+	void swapBuffers();
+	~ShaderPixel();
+
+	static ShaderPixel *FromWindow(GLFWwindow* window);
 private:
 
 	bool mEnvMapDirty = true;
@@ -28,6 +32,7 @@ private:
 	void drawMandelbrot(glm::mat4 viewProjection);
 	void drawCloud(glm::mat4 viewProjection);
 	void drawMandelbox(glm::mat4 viewProjection);
+
 
 	ShaderID	mBox;
 	ShaderID	mFXAA;
@@ -75,4 +80,9 @@ private:
 	glm::vec2	mCameraAngles	{ 0,0 };
 
 	glm::vec2	mWindowSize		{ 0,0 };
+
+	GLFWwindow	*mWindow;
+	float		mScale;
+	int			mWidth, mHeight;
+	float		mMouseX, mMouseY;
 };

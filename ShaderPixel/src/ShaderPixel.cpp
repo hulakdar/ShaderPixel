@@ -17,6 +17,7 @@
 #include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
+#include <imgui_impl_glfw.h>
 
 #define _USE_MATH_DEFINES 
 #include <math.h>
@@ -74,14 +75,6 @@ void ShaderPixel::update()
 			mCameraPosition -= mCameraRight * speed;
 		if (D)
 			mCameraPosition += mCameraRight * speed;
-
-		if (mCameraAngles.x > 2 * M_PI)
-			mCameraAngles.x -= float(2 * M_PI);
-
-		if (mCameraAngles.x <= -2 * M_PI)
-			mCameraAngles.x += float(2 * M_PI);
-
-		mCameraAngles.y = glm::clamp(mCameraAngles.y, -float(M_PI_2), float(M_PI_2));
 	}
 
 	glm::mat4 cameraTranslation = glm::translate(glm::mat4(1), -mCameraPosition);
@@ -98,7 +91,8 @@ void ShaderPixel::update()
 	glBindBuffer(GL_UNIFORM_BUFFER, mGlobalBufferID);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlobalUniformBuffer), &mGlobalBuffer);
 
-	captureEnvMap();
+	if (mEnvMapDirty)
+		captureEnvMap();
 
 	setRenderTarget(&mSceneColorMS);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -124,7 +118,7 @@ void ShaderPixel::update()
 	setRenderTarget(&Renderer::viewport);
 
 	static bool bFxaa = true;
-	ImGui::Begin("Postprocess");
+	ImGui::Begin("Post-processing");
 	ImGui::Checkbox("FXAA", &bFxaa);
 	if (bFxaa)
 	{
@@ -408,7 +402,6 @@ void ShaderPixel::update()
 			Renderer::DrawQuadFS();
 
 			glDisable(GL_BLEND);
-
 		}
 		
 		ImGui::EndGroup();
@@ -423,6 +416,11 @@ void ShaderPixel::update()
 ShaderPixel::~ShaderPixel()
 {
 	Resources::Clear();
+
+    ImGui_ImplGlfw_Shutdown();
+	glfwDestroyWindow(mWindow);
+	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwTerminate();
 }
 
 void ShaderPixel::shadowPass()
@@ -460,11 +458,13 @@ void ShaderPixel::shadowPass()
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	glCullFace(GL_FRONT);
+
 	// shadow
 	Renderer::Draw(scene, shadowTransform, Feature::ShadowPass);
-	drawMandelbox(shadowTransform);
-	drawMandelbrot(shadowTransform);
-	drawCloud(shadowTransform);
+
+	//drawMandelbox(shadowTransform);  //??????????????????????
+	//drawMandelbrot(shadowTransform); //??????????????????????
+	//drawCloud(shadowTransform);      //??????????????????????
 
 	glActiveTexture(GL_TEXTURE15);
 	glBindTexture(GL_TEXTURE_2D, mShadow.textures[RenderTarget::Depth]);
@@ -514,9 +514,9 @@ void ShaderPixel::captureEnvMap()
 	glm::mat4 view = glm::lookAt(probePosition, probePosition + targetVectors[mFaceIndex], upVectors[mFaceIndex]);
 	glm::mat4 viewProjection = projection * view;
 	Renderer::Draw(scene, viewProjection , Feature::Dithered);
-	drawMandelbrot(viewProjection);
-	drawMandelbox(viewProjection);
-	drawCloud(viewProjection);
+	//drawMandelbrot(viewProjection);
+	//drawMandelbox(viewProjection);
+	//drawCloud(viewProjection);
 
 	glActiveTexture(GL_TEXTURE14);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, mEnvProbe.textures[RenderTarget::Color]);
@@ -529,16 +529,26 @@ void ShaderPixel::captureEnvMap()
 	}
 }
 
-void ShaderPixel::onMouseMove(float x, float y, float dX, float dY)
+void ShaderPixel::onMouseMove(float x, float y)
 {
-	(void)x;
-	(void)y;
+	float dX = x - mMouseX;
+	float dY = y - mMouseY;
 
+	mMouseX = x;
+	mMouseY = y;
 
-	if (mCaptureMouse || glfwGetMouseButton(glfwGetCurrentContext(), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+	if (mCaptureMouse || glfwGetMouseButton(mWindow, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 	{
 		mCameraAngles.x += dX / mWindowSize.x;
 		mCameraAngles.y += dY / mWindowSize.y;
+
+		if (mCameraAngles.x > 2 * M_PI)
+			mCameraAngles.x -= float(2 * M_PI);
+
+		if (mCameraAngles.x <= -2 * M_PI)
+			mCameraAngles.x += float(2 * M_PI);
+
+		mCameraAngles.y = glm::clamp(mCameraAngles.y, -float(M_PI_2 * 0.8), float(M_PI_2 * 0.8));
 	}
 }
 
@@ -668,7 +678,7 @@ void LoadMaterials(const std::vector<tinyobj::material_t>* materials)
 	}
 }
 
-void ShaderPixel::init(Host* host)
+void ShaderPixel::init()
 {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
@@ -677,7 +687,7 @@ void ShaderPixel::init(Host* host)
 
 	ImGui::StyleColorsDark();
 	ImFontConfig cfg;
-	cfg.SizePixels = 13 * host->mScale;
+	cfg.SizePixels = mScale;
 
 	ImGuiStyle& style = ImGui::GetStyle();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -901,22 +911,101 @@ void ShaderPixel::updateWindowSize(int x, int y)
 	Renderer::Update(x, y);
 }
 
-void ShaderPixel::renderUI()
-{
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
 void ShaderPixel::preframe()
 {
 	ImGui_ImplOpenGL3_NewFrame();
 }
 
-extern "C"
-#ifdef _MSC_VER
-__declspec(dllexport)
-#endif
-Application* getApplicationPtr()
+namespace { namespace Callbacks {
+	void Error(int error, const char* description)
+	{
+		std::cerr << "GLFW Sent error " << error << ": " << description << "\n";
+	}
+
+	void MousePosition(GLFWwindow* window, double x, double y)
+	{
+		ShaderPixel* app = ShaderPixel::FromWindow(window);
+		app->onMouseMove(float(x), float(y));
+	}
+	void Scroll(GLFWwindow* window, double x, double y)
+	{
+		ShaderPixel* app = ShaderPixel::FromWindow(window);
+		app->onScroll(float(x), float(y));
+	}
+	void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{
+		ShaderPixel* app = ShaderPixel::FromWindow(window);
+		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+			glfwSetWindowShouldClose(window, GLFW_TRUE);
+		app->onKey(key, scancode, action, mods);
+	}
+	void FramebufferSize(GLFWwindow* window, int width, int height)
 {
-	static ShaderPixel sShaderPixel;
-	return &sShaderPixel;
+		ShaderPixel* app = ShaderPixel::FromWindow(window);
+		app->updateWindowSize(width, height);
+	}
+} }
+
+ShaderPixel* ShaderPixel::FromWindow(GLFWwindow* window)
+{
+	return (ShaderPixel*)glfwGetWindowUserPointer(window);
 }
+
+ShaderPixel::ShaderPixel()
+{
+
+	glfwSetErrorCallback(Callbacks::Error);
+	// TODO: ??? glfwInitHint(); 
+	glfwInit();
+
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+	glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, 1);
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_SAMPLES, 4);
+
+	mWindow = glfwCreateWindow(1024, 1024, "ShaderPixel", nullptr, nullptr);
+	glfwSetWindowUserPointer(mWindow, this);
+	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	glfwGetFramebufferSize(mWindow, &mWidth, &mHeight);
+	glfwSetKeyCallback(mWindow, Callbacks::Keyboard);
+	glfwSetCursorPosCallback(mWindow, Callbacks::MousePosition);
+	glfwSetScrollCallback(mWindow, Callbacks::Scroll);
+	glfwSetFramebufferSizeCallback(mWindow, Callbacks::FramebufferSize);
+
+	glfwMakeContextCurrent(mWindow);
+	glfwSwapInterval(1);
+
+	glfwGetWindowContentScale(mWindow, &mScale, &mScale);
+
+	gladLoadGL();
+
+	init();
+	updateWindowSize(mWidth, mHeight);
+
+	ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
+	glfwFocusWindow(mWindow);
+
+	double dmousex, dmousey;
+	glfwGetCursorPos(mWindow, &dmousex, &dmousey);
+	mMouseX = float(dmousex);
+	mMouseY = float(dmousey);
+}
+
+bool ShaderPixel::shouldClose()
+{
+	return glfwWindowShouldClose(mWindow);
+}
+
+void ShaderPixel::swapBuffers()
+{
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	glfwMakeContextCurrent(mWindow);
+	glfwSwapBuffers(mWindow);
+}
+

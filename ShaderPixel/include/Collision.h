@@ -9,7 +9,7 @@ struct Sphere
 	float		radius;
 };
 
-bool PointInsideBox(glm::vec3 point, AABB box)
+inline bool PointInsideBox(glm::vec3 point, AABB box)
 {
 	auto more =
 		point.x >= box.Min.x &&
@@ -22,7 +22,7 @@ bool PointInsideBox(glm::vec3 point, AABB box)
 	return less && more;
 }
 
-glm::vec3 SphereBoxIntersection(Sphere& sphere, AABB& box)
+inline glm::vec3 SphereBoxIntersection(Sphere& sphere, AABB& box)
 {
 	if (PointInsideBox(sphere.position, box))
 	{
