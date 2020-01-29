@@ -151,7 +151,7 @@ float shadowCalculation(vec4 fragPosLightSpace)
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
+    projCoords.xy = projCoords.xy * 0.5 + 0.5;
     // get depth of current fragment from light's perspective
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(uShadow, 0);

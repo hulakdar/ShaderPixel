@@ -15,6 +15,12 @@
 #include <glm/ext/matrix_transform.hpp>
 #include "imgui.h"
 
+namespace
+{
+	typedef void(*glClipControlType)(GLenum origin, GLenum depth);
+	glClipControlType glClipControl = nullptr;
+}
+
 namespace Renderer
 {
 	RenderTarget viewport;
@@ -82,6 +88,16 @@ namespace Renderer
 		GLCall(glEnable(GL_DEPTH_TEST));
 		stbi_set_flip_vertically_on_load(true);
 		glEnable(GL_MULTISAMPLE); //need?
+
+		if (glfwExtensionSupported("GL_ARB_clip_control"))  // reverse Z 
+		{
+			glClipControl = (glClipControlType)glfwGetProcAddress("glClipControl");
+			assert(glClipControl);
+
+			glClipControl(GL_LOWER_LEFT, 0x935F /*ZERO_TO_ONE*/ );
+			glClearDepth(0.0f);
+			glDepthFunc(GL_GREATER);
+		}
 
 		assert(Resources::Textures.size() == 0);
 		assert(Resources::Materials.size() == 0);

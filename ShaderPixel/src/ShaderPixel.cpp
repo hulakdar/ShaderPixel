@@ -22,14 +22,22 @@
 #define _USE_MATH_DEFINES 
 #include <math.h>
 
+glm::mat4 MakeInfReversedZProjRH(float fovY_radians, float aspectWbyH, float zNear)
+{
+    float f = 1.0f / tan(fovY_radians / 2.0f);
+    return glm::mat4(
+        f / aspectWbyH, 0.0f,  0.0f,  0.0f,
+                  0.0f,    f,  0.0f,  0.0f,
+                  0.0f, 0.0f,  0.0f, -1.0f,
+                  0.0f, 0.0f, zNear,  0.0f);
+}
+
 void ShaderPixel::update()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	static float Near = 1;
-	static float Far = 90000;
-	ImGui::SliderFloat("Near", &Near, 0.1f, 3.f);
-	ImGui::SliderFloat("Far", &Far, 6.f, 90000.f);
+	ImGui::SliderFloat("Near", &Near, .1f, 90000.f);
 
 	double lastTime = mCurrentTime;
 
@@ -79,7 +87,7 @@ void ShaderPixel::update()
 
 	glm::mat4 cameraTranslation = glm::translate(glm::mat4(1), -mCameraPosition);
 	glm::mat4 viewProjection =
-		glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
+		MakeInfReversedZProjRH(glm::radians(65.0f), mAspectRatio, Near) // glm::perspective(glm::radians(65.0f), mAspectRatio, Near, Far)
 		* cameraRotation * cameraTranslation;
 
 	shadowPass();
@@ -510,13 +518,13 @@ void ShaderPixel::captureEnvMap()
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	const static glm::vec3 probePosition{ 0, 400, 0 };
-	glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1.f, .1f, 9000.f);
+	glm::mat4 projection = MakeInfReversedZProjRH(glm::radians(90.0f), 1.f, 1.f); //glm::perspective(glm::radians(90.0f), 1.f, .1f, 9000.f);
 	glm::mat4 view = glm::lookAt(probePosition, probePosition + targetVectors[mFaceIndex], upVectors[mFaceIndex]);
 	glm::mat4 viewProjection = projection * view;
 	Renderer::Draw(scene, viewProjection , Feature::Dithered);
 	//drawMandelbrot(viewProjection);
 	//drawMandelbox(viewProjection);
-	//drawCloud(viewProjection);
+	drawCloud(viewProjection);
 
 	glActiveTexture(GL_TEXTURE14);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, mEnvProbe.textures[RenderTarget::Color]);
